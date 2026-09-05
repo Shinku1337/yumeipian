@@ -30,6 +30,42 @@ html, body {
   touch-action: none;
 }
 
+.source-link {
+  position: fixed;
+  left: calc(20px + env(safe-area-inset-left, 0px));
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  color: rgba(255, 255, 255, 0.28);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0;
+  text-decoration: none;
+  touch-action: manipulation;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.source-link::before {
+  content: "";
+  position: absolute;
+  inset: -12px;
+}
+
+.source-link:hover,
+.source-link:focus-visible {
+  color: rgba(255, 255, 255, 0.78);
+  outline: none;
+}
+
+@media (max-width: 600px) {
+  .source-link {
+    left: calc(14px + env(safe-area-inset-left, 0px));
+    bottom: calc(13px + env(safe-area-inset-bottom, 0px));
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.24);
+  }
+}
+
 #btn-wrap {
   position: fixed;
   bottom: calc(24px + env(safe-area-inset-bottom, 0px));
