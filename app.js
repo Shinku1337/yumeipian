@@ -27,6 +27,11 @@
 
   let width = 0, height = 0, cx = 0, cy = 0;
   let dpr = 1;
+  let uiScale = 1;
+
+  function getScale() {
+    return Math.min(1.0, Math.max(0.55, Math.min(width, height) / 750));
+  }
 
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -37,12 +42,16 @@
     ctx.scale(dpr, dpr);
     cx = width / 2;
     cy = height / 2;
+    uiScale = getScale();
     if (activeMode && activeMode.resize) {
       activeMode.resize(width, height);
     }
   }
 
   window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', () => {
+    setTimeout(resize, 150);
+  });
 
   const mouse = {
     x: -9999,
@@ -58,9 +67,14 @@
 
   const cursorParticles = [];
 
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchStartTime = 0;
+
   function onPointerMove(e) {
-    const x = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
-    const y = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+    const isTouch = !!e.touches;
+    const x = isTouch ? e.touches[0].clientX : e.clientX;
+    const y = isTouch ? e.touches[0].clientY : e.clientY;
     const now = performance.now();
     const dt = Math.max(1, now - mouse.lastTime);
     mouse.vx = (x - (mouse.x === -9999 ? x : mouse.x)) / dt * 16;
@@ -87,13 +101,14 @@
   }
 
   window.addEventListener('mousemove', onPointerMove);
-  window.addEventListener('touchmove', onPointerMove, { passive: true });
 
-  function onPointerDown(e) {
+  window.addEventListener('touchmove', (e) => {
     if (e.target.closest('#btn-wrap')) return;
-    mouse.down = true;
-    const x = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
-    const y = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+    if (e.cancelable) e.preventDefault();
+    onPointerMove(e);
+  }, { passive: false });
+
+  function spawnShockwave(x, y) {
     if (activeMode && activeMode.onClick) {
       activeMode.onClick(x, y);
     }
@@ -113,10 +128,43 @@
     }
   }
 
-  window.addEventListener('mousedown', onPointerDown);
-  window.addEventListener('touchstart', onPointerDown, { passive: true });
+  window.addEventListener('mousedown', (e) => {
+    if (e.target.closest('#btn-wrap')) return;
+    mouse.down = true;
+    spawnShockwave(e.clientX, e.clientY);
+  });
   window.addEventListener('mouseup', () => { mouse.down = false; });
-  window.addEventListener('touchend', () => { mouse.down = false; });
+
+  window.addEventListener('touchstart', (e) => {
+    if (e.target.closest('#btn-wrap')) return;
+    if (e.touches.length === 2) {
+      switchMode(currentMode + 1);
+      return;
+    }
+    const t = e.touches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+    touchStartTime = performance.now();
+    mouse.down = true;
+    mouse.x = t.clientX;
+    mouse.y = t.clientY;
+    mouse.active = true;
+    spawnShockwave(t.clientX, t.clientY);
+  }, { passive: true });
+
+  window.addEventListener('touchend', (e) => {
+    mouse.down = false;
+    if (e.changedTouches && e.changedTouches.length > 0) {
+      const t = e.changedTouches[0];
+      const dx = t.clientX - touchStartX;
+      const dy = t.clientY - touchStartY;
+      const dt = performance.now() - touchStartTime;
+      if (dt < 350 && Math.abs(dx) > 60 && Math.abs(dy) < 50) {
+        if (dx < -60) switchMode(currentMode + 1);
+        else if (dx > 60) switchMode(currentMode - 1);
+      }
+    }
+  }, { passive: true });
 
   function switchMode(idx) {
     currentMode = (idx + TOTAL_MODES) % TOTAL_MODES;
@@ -219,14 +267,15 @@
     init() {
       this.items = [];
       this.flashes = [];
-      const count = Math.max(9, Math.min(16, Math.floor(width / 130)));
+      const s = getScale();
+      const count = Math.max(7, Math.min(14, Math.floor(width / (width < 600 ? 70 : 130))));
       for (let i = 0; i < count; i++) {
         const spriteIdx = i % sprites.length;
         const sprite = sprites[spriteIdx];
-        const baseW = 160 + Math.random() * 80;
+        const baseW = (135 + Math.random() * 70) * s;
         const aspect = sprite.height / sprite.width;
         const baseH = baseW * aspect;
-        const speed = 2.2 + Math.random() * 2.8;
+        const speed = 2.0 + Math.random() * 2.5;
         const angle = (Math.random() * 0.8 + 0.1) * Math.PI + (Math.random() > 0.5 ? 0 : Math.PI);
         this.items.push({
           spriteIdx,
@@ -246,13 +295,14 @@
       }
     },
     onClick(x, y) {
+      const s = getScale();
       for (let i = 0; i < 3; i++) {
         const spriteIdx = Math.floor(Math.random() * sprites.length);
         const sprite = sprites[spriteIdx];
-        const baseW = 150 + Math.random() * 70;
+        const baseW = (130 + Math.random() * 60) * s;
         const aspect = sprite.height / sprite.width;
         const ang = Math.random() * Math.PI * 2;
-        const spd = 5 + Math.random() * 4;
+        const spd = 4 + Math.random() * 4;
         this.items.push({
           spriteIdx,
           w: baseW,
@@ -269,7 +319,7 @@
           trail: []
         });
       }
-      if (this.items.length > 25) this.items.shift();
+      if (this.items.length > 22) this.items.shift();
     },
     render() {
       ctx.fillStyle = 'rgba(3, 3, 6, 0.22)';
@@ -347,11 +397,12 @@
     rotAngle: 0,
     rings: [],
     init() {
+      const s = getScale();
       this.rings = [
-        { radius: 130, count: 6, speed: 0.01, spriteIdx: 0, size: 120, isRainbow: false },
-        { radius: 260, count: 8, speed: -0.007, spriteIdx: 1, size: 150, isRainbow: true },
-        { radius: 420, count: 12, speed: 0.005, spriteIdx: 0, size: 170, isRainbow: false },
-        { radius: 600, count: 16, speed: -0.003, spriteIdx: 1, size: 190, isRainbow: true }
+        { radius: 100 * s, count: 5, speed: 0.01, spriteIdx: 0, size: 100 * s, isRainbow: false },
+        { radius: 210 * s, count: 8, speed: -0.007, spriteIdx: 1, size: 130 * s, isRainbow: true },
+        { radius: 340 * s, count: 10, speed: 0.005, spriteIdx: 0, size: 150 * s, isRainbow: false },
+        { radius: 480 * s, count: 14, speed: -0.003, spriteIdx: 1, size: 170 * s, isRainbow: true }
       ];
     },
     onClick() {
@@ -388,7 +439,8 @@
         }
       }
 
-      const centerW = 210 * (1 + Math.sin(time * 0.004) * 0.15);
+      const s = getScale();
+      const centerW = 180 * s * (1 + Math.sin(time * 0.004) * 0.15);
       const centerH = centerW * (sprites[1].height / sprites[1].width);
       drawSprite(ctx, 1, false, 0, 0, 0, centerW, centerH, -this.rotAngle * 2, 1.0, 'source-over');
 
@@ -400,7 +452,7 @@
     stars: [],
     init() {
       this.stars = [];
-      const count = Math.max(35, Math.min(65, Math.floor(width / 35)));
+      const count = Math.max(25, Math.min(55, Math.floor(width / (width < 600 ? 25 : 35))));
       for (let i = 0; i < count; i++) {
         this.stars.push(this.createStar());
       }
@@ -408,8 +460,8 @@
     createStar(deep = true) {
       const spriteIdx = Math.floor(Math.random() * sprites.length);
       return {
-        x: (Math.random() - 0.5) * width * 2.5,
-        y: (Math.random() - 0.5) * height * 2.5,
+        x: (Math.random() - 0.5) * width * 2.2,
+        y: (Math.random() - 0.5) * height * 2.2,
         z: deep ? Math.random() * 1200 + 100 : 1300,
         pz: 1300,
         spriteIdx,
@@ -426,35 +478,36 @@
       ctx.fillStyle = 'rgba(2, 2, 5, 0.28)';
       ctx.fillRect(0, 0, width, height);
 
-      const fov = 320;
-      const speed = 14 + (mouse.down ? 25 : 0);
+      const s = getScale();
+      const fov = 300 * s;
+      const speed = 12 + (mouse.down ? 22 : 0);
       const targetCx = cx + (mouse.active ? (mouse.x - cx) * 0.35 : 0);
       const targetCy = cy + (mouse.active ? (mouse.y - cy) * 0.35 : 0);
 
       this.stars.sort((a, b) => b.z - a.z);
 
       for (let i = 0; i < this.stars.length; i++) {
-        const s = this.stars[i];
-        s.pz = s.z;
-        s.z -= speed;
-        s.rot += s.rotSpeed;
-        s.hue = (s.hue + 1.8) % 360;
+        const star = this.stars[i];
+        star.pz = star.z;
+        star.z -= speed;
+        star.rot += star.rotSpeed;
+        star.hue = (star.hue + 1.8) % 360;
 
-        if (s.z <= 30) {
-          Object.assign(s, this.createStar(false));
+        if (star.z <= 30) {
+          Object.assign(star, this.createStar(false));
           continue;
         }
 
-        const scale = fov / s.z;
-        const sx = targetCx + s.x * scale;
-        const sy = targetCy + s.y * scale;
+        const scale = fov / star.z;
+        const sx = targetCx + star.x * scale;
+        const sy = targetCy + star.y * scale;
 
-        const prevScale = fov / s.pz;
-        const psx = targetCx + s.x * prevScale;
-        const psy = targetCy + s.y * prevScale;
+        const prevScale = fov / star.pz;
+        const psx = targetCx + star.x * prevScale;
+        const psy = targetCy + star.y * prevScale;
 
         ctx.save();
-        ctx.strokeStyle = s.isRainbow ? `hsla(${s.hue}, 100%, 70%, ${Math.min(0.8, scale * 1.2)})` : 'rgba(255, 255, 255, 0.5)';
+        ctx.strokeStyle = star.isRainbow ? `hsla(${star.hue}, 100%, 70%, ${Math.min(0.8, scale * 1.2)})` : 'rgba(255, 255, 255, 0.5)';
         ctx.lineWidth = Math.max(1, scale * 3);
         ctx.beginPath();
         ctx.moveTo(psx, psy);
@@ -462,13 +515,13 @@
         ctx.stroke();
         ctx.restore();
 
-        const sprite = sprites[s.spriteIdx];
+        const sprite = sprites[star.spriteIdx];
         const aspect = sprite.height / sprite.width;
-        const boxW = Math.max(70, Math.min(width * 0.7, 210 * scale));
+        const boxW = Math.max(50, Math.min(width * 0.75, 180 * s * scale));
         const boxH = boxW * aspect;
-        const alpha = Math.min(1, (1300 - s.z) / 300);
+        const alpha = Math.min(1, (1300 - star.z) / 300);
 
-        drawSprite(ctx, s.spriteIdx, s.isRainbow, s.hue, sx, sy, boxW, boxH, s.rot, alpha, s.isRainbow ? 'lighter' : 'source-over');
+        drawSprite(ctx, star.spriteIdx, star.isRainbow, star.hue, sx, sy, boxW, boxH, star.rot, alpha, star.isRainbow ? 'lighter' : 'source-over');
       }
     }
   });
@@ -477,11 +530,12 @@
     orbs: [],
     init() {
       this.orbs = [];
-      const count = Math.max(18, Math.min(32, Math.floor(width / 55)));
+      const s = getScale();
+      const count = Math.max(12, Math.min(26, Math.floor(width / (width < 600 ? 32 : 55))));
       for (let i = 0; i < count; i++) {
         const spriteIdx = i % sprites.length;
         const sprite = sprites[spriteIdx];
-        const w = 130 + Math.random() * 70;
+        const w = (110 + Math.random() * 60) * s;
         this.orbs.push({
           spriteIdx,
           w,
@@ -502,7 +556,7 @@
         const dx = o.x - x;
         const dy = o.y - y;
         const dist = Math.max(20, Math.hypot(dx, dy));
-        const force = 220 / dist;
+        const force = 200 / dist;
         o.vx += (dx / dist) * force;
         o.vy += (dy / dist) * force;
       });
@@ -556,14 +610,14 @@
     columns: [],
     init() {
       this.columns = [];
-      const colWidth = 140;
+      const colWidth = width < 600 ? Math.floor(width / 4) : 130;
       const count = Math.ceil(width / colWidth);
       for (let i = 0; i < count; i++) {
         this.columns.push({
           x: i * colWidth + colWidth / 2,
           y: Math.random() * -height,
-          speed: 3 + Math.random() * 4,
-          length: 3 + Math.floor(Math.random() * 3),
+          speed: 3 + Math.random() * 3.5,
+          length: 3 + Math.floor(Math.random() * 2),
           hueOffset: i * 30,
           spriteIdx: i % sprites.length,
           isRainbow: i % 2 !== 0
@@ -571,11 +625,13 @@
       }
     },
     onClick() {
-      this.columns.forEach(c => { c.speed = 10 + Math.random() * 8; });
+      this.columns.forEach(c => { c.speed = 9 + Math.random() * 6; });
     },
     render(time) {
       ctx.fillStyle = 'rgba(2, 4, 8, 0.25)';
       ctx.fillRect(0, 0, width, height);
+
+      const s = getScale();
 
       for (let c = 0; c < this.columns.length; c++) {
         const col = this.columns[c];
@@ -583,12 +639,12 @@
 
         const sprite = sprites[col.spriteIdx];
         const aspect = sprite.height / sprite.width;
-        const boxW = 125;
+        const boxW = (width < 600 ? (width / 4.4) : 120) * s;
         const boxH = boxW * aspect;
 
         if (col.y - col.length * (boxH * 1.1) > height) {
           col.y = -boxH;
-          col.speed = 3 + Math.random() * 4;
+          col.speed = 3 + Math.random() * 3.5;
         }
 
         let offsetX = 0;
@@ -596,8 +652,8 @@
           const dmx = col.x - mouse.x;
           const dmy = col.y - mouse.y;
           const dist = Math.hypot(dmx, dmy);
-          if (dist < 160) {
-            offsetX = (dmx / dist) * (160 - dist) * 0.7;
+          if (dist < 140) {
+            offsetX = (dmx / dist) * (140 - dist) * 0.7;
           }
         }
 
@@ -621,14 +677,15 @@
     rotY: 0,
     init() {
       this.nodes = [];
-      const count = Math.max(22, Math.min(36, Math.floor(width / 45)));
+      const s = getScale();
+      const count = Math.max(16, Math.min(32, Math.floor(width / (width < 600 ? 30 : 45))));
       for (let i = 0; i < count; i++) {
         this.nodes.push({
           x: (Math.random() - 0.5) * 10,
           y: (Math.random() - 0.5) * 10,
           z: 20 + (Math.random() - 0.5) * 10,
           spriteIdx: i % sprites.length,
-          size: 110 + Math.random() * 40,
+          size: (95 + Math.random() * 35) * s,
           hue: (i / count) * 360,
           isRainbow: i % 2 === 0,
           trail: []
@@ -693,7 +750,7 @@
     monoliths: [],
     init() {
       this.stars = [];
-      for (let i = 0; i < 50; i++) {
+      for (let i = 0; i < 40; i++) {
         this.stars.push({
           x: Math.random() * width,
           y: Math.random() * (height * 0.55),
@@ -701,10 +758,12 @@
           alpha: Math.random()
         });
       }
+      const s = getScale();
+      const spread = width < 600 ? width * 0.32 : 280;
       this.monoliths = [
-        { x: -280, rot: 0, rotSpd: 0.012, spriteIdx: 1, w: 200, isRainbow: true },
-        { x: 0, rot: 0, rotSpd: -0.008, spriteIdx: 0, w: 260, isRainbow: false },
-        { x: 280, rot: 0, rotSpd: 0.01, spriteIdx: 1, w: 200, isRainbow: true }
+        { x: -spread, rot: 0, rotSpd: 0.012, spriteIdx: 1, w: 180 * s, isRainbow: true },
+        { x: 0, rot: 0, rotSpd: -0.008, spriteIdx: 0, w: 230 * s, isRainbow: false },
+        { x: spread, rot: 0, rotSpd: 0.01, spriteIdx: 1, w: 180 * s, isRainbow: true }
       ];
     },
     onClick() {
@@ -755,7 +814,7 @@
       ctx.strokeStyle = '#00f0ff';
       ctx.lineWidth = 1.5;
 
-      const vCols = 18;
+      const vCols = width < 600 ? 12 : 18;
       for (let i = -vCols; i <= vCols; i++) {
         const bottomX = cx + i * (width / vCols * 1.4);
         ctx.beginPath();
@@ -778,8 +837,8 @@
 
       this.monoliths.forEach((m, idx) => {
         m.rot += m.rotSpd;
-        const bob = Math.sin(time * 0.0025 + idx * 2) * 28;
-        const posY = horizon - 90 + bob;
+        const bob = Math.sin(time * 0.0025 + idx * 2) * 24;
+        const posY = horizon - 80 * getScale() + bob;
         const posX = cx + m.x;
         const hue = (time * 0.15 + idx * 90) % 360;
         const sprite = sprites[m.spriteIdx];
@@ -802,7 +861,7 @@
     rot: 0,
     init() {
       this.nodes = [];
-      const steps = 22;
+      const steps = width < 600 ? 16 : 22;
       for (let i = 0; i < steps; i++) {
         this.nodes.push({ step: i, spriteA: 0, spriteB: 1 });
       }
@@ -814,8 +873,9 @@
       ctx.fillStyle = 'rgba(2, 3, 7, 0.28)';
       ctx.fillRect(0, 0, width, height);
 
+      const s = getScale();
       this.rot += 0.012;
-      const radius = Math.min(width, height) * 0.3;
+      const radius = Math.min(width, height) * 0.32;
       const stepY = (height * 1.2) / this.nodes.length;
       const startY = -height * 0.1;
 
@@ -823,7 +883,7 @@
       const strandB = [];
 
       for (let i = 0; i < this.nodes.length; i++) {
-        const theta = (i * 0.32) + this.rot;
+        const theta = (i * 0.34) + this.rot;
         const y = startY + i * stepY;
 
         const xA = cx + Math.cos(theta) * radius;
@@ -850,8 +910,8 @@
       const allPoints = strandA.concat(strandB).sort((a, b) => a.z - b.z);
 
       allPoints.forEach(pt => {
-        const scale = 0.7 + (pt.z + 1) * 0.35;
-        const baseW = 125 * scale;
+        const depthScale = 0.7 + (pt.z + 1) * 0.35;
+        const baseW = 110 * s * depthScale;
         const sprite = sprites[pt.spriteIdx];
         const aspect = sprite.height / sprite.width;
         drawSprite(ctx, pt.spriteIdx, pt.isRainbow, pt.hue, pt.x, pt.y, baseW, baseW * aspect, pt.z * 0.4, 0.4 + (pt.z + 1) * 0.3, pt.isRainbow ? 'lighter' : 'source-over');
@@ -872,6 +932,7 @@
       this.zoom += 0.005;
       const layers = 10;
       const rot = time * 0.0006;
+      const s = getScale();
 
       ctx.save();
       ctx.translate(cx, cy);
@@ -886,7 +947,7 @@
         const hue = (time * 0.18 + i * 40) % 360;
         const angle = rot * (i % 2 === 0 ? 1 : -1) * 2 + i * 0.15;
         const aspect = sprite.height / sprite.width;
-        const w = 240 * scale;
+        const w = 220 * s * scale;
         const h = w * aspect;
         const isRainbow = i % 2 === 0;
 
@@ -902,10 +963,12 @@
     targets: [],
     init() {
       this.targets = [];
-      for (let i = 0; i < 7; i++) {
+      const s = getScale();
+      const count = width < 600 ? 5 : 7;
+      for (let i = 0; i < count; i++) {
         const spriteIdx = i % sprites.length;
         const sprite = sprites[spriteIdx];
-        const w = 180 + Math.random() * 80;
+        const w = (150 + Math.random() * 70) * s;
         this.targets.push({
           x: Math.random() * (width - w) + w / 2,
           y: Math.random() * (height - w) + w / 2,
@@ -975,11 +1038,12 @@
     boids: [],
     init() {
       this.boids = [];
-      const count = Math.max(20, Math.min(35, Math.floor(width / 45)));
+      const s = getScale();
+      const count = Math.max(16, Math.min(32, Math.floor(width / (width < 600 ? 30 : 45))));
       for (let i = 0; i < count; i++) {
         const spriteIdx = i % sprites.length;
         const sprite = sprites[spriteIdx];
-        const w = 110 + Math.random() * 40;
+        const w = (95 + Math.random() * 35) * s;
         this.boids.push({
           x: Math.random() * width,
           y: Math.random() * height,
@@ -1043,6 +1107,9 @@
     nodes: [],
     init() {
       this.nodes = [];
+      const s = getScale();
+      this.cols = width < 600 ? 4 : 5;
+      this.rows = width < 600 ? 5 : 4;
       const stepX = width / (this.cols + 1);
       const stepY = height / (this.rows + 1);
       for (let r = 0; r < this.rows; r++) {
@@ -1051,7 +1118,7 @@
           const origY = (r + 1) * stepY;
           const spriteIdx = (r * this.cols + c) % sprites.length;
           const sprite = sprites[spriteIdx];
-          const w = 120;
+          const w = 105 * s;
           this.nodes.push({
             origX, origY,
             x: origX, y: origY,
@@ -1089,8 +1156,8 @@
           const dx = n.x - mouse.x;
           const dy = n.y - mouse.y;
           const dist = Math.hypot(dx, dy);
-          if (dist < 150) {
-            const force = (150 - dist) * 0.1;
+          if (dist < 140) {
+            const force = (140 - dist) * 0.1;
             n.vx += (dx / dist) * force;
             n.vy += (dy / dist) * force;
           }
@@ -1143,15 +1210,16 @@
     init() {
       this.rings = [];
       this.pulses = [];
-      const numRings = 4;
+      const s = getScale();
+      const numRings = width < 600 ? 3 : 4;
       for (let r = 1; r <= numRings; r++) {
-        const radius = r * 115;
+        const radius = r * (95 * s);
         const count = r * 6;
         for (let i = 0; i < count; i++) {
           const angle = (Math.PI * 2 / count) * i;
           const spriteIdx = (r + i) % sprites.length;
           const sprite = sprites[spriteIdx];
-          const w = 110 + r * 10;
+          const w = (95 + r * 10) * s;
           this.rings.push({
             baseR: radius,
             angle,
@@ -1219,11 +1287,12 @@
     init() {
       this.items = [];
       this.history = [];
-      const count = 10;
+      const s = getScale();
+      const count = width < 600 ? 7 : 10;
       for (let i = 0; i < count; i++) {
         const spriteIdx = i % sprites.length;
         const sprite = sprites[spriteIdx];
-        const w = 170;
+        const w = 150 * s;
         this.items.push({
           spriteIdx,
           w,
@@ -1298,13 +1367,14 @@
       });
     },
     explode(x, y, hue) {
-      const numFrags = 16;
+      const numFrags = width < 600 ? 12 : 16;
+      const s = getScale();
       for (let i = 0; i < numFrags; i++) {
         const angle = (Math.PI * 2 / numFrags) * i + (Math.random() - 0.5) * 0.3;
         const spd = 4 + Math.random() * 6;
         const spriteIdx = i % sprites.length;
         const sprite = sprites[spriteIdx];
-        const w = 110 + Math.random() * 40;
+        const w = (95 + Math.random() * 35) * s;
         this.fragments.push({
           x, y,
           vx: Math.cos(angle) * spd,

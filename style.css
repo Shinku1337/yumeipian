@@ -5,6 +5,7 @@
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html, body {
@@ -13,6 +14,8 @@ html, body {
   overflow: hidden;
   background-color: #030305;
   cursor: crosshair;
+  touch-action: none;
+  position: fixed;
 }
 
 #canvas {
@@ -23,15 +26,17 @@ html, body {
   top: 0;
   left: 0;
   z-index: 1;
+  touch-action: none;
 }
 
 #btn-wrap {
   position: fixed;
-  bottom: 28px;
-  right: 28px;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  right: calc(24px + env(safe-area-inset-right, 0px));
   z-index: 50;
   cursor: pointer;
   perspective: 800px;
+  touch-action: manipulation;
 }
 
 #btn {
@@ -46,8 +51,19 @@ html, body {
   animation: btnHoverFloat 3.2s ease-in-out infinite alternate;
 }
 
+@media (max-width: 600px) {
+  #btn-wrap {
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    right: calc(16px + env(safe-area-inset-right, 0px));
+  }
+  #btn {
+    width: 76px;
+    height: 46px;
+  }
+}
+
 #btn:hover {
-  transform: scale(1.15) translateY(-4px) rotateX(10deg);
+  transform: scale(1.12) translateY(-3px) rotateX(10deg);
 }
 
 #btn:active {
@@ -56,7 +72,7 @@ html, body {
 
 @keyframes btnHoverFloat {
   0% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-6px) rotate(-2deg); }
+  50% { transform: translateY(-5px) rotate(-2deg); }
   100% { transform: translateY(2px) rotate(2deg); }
 }
 
