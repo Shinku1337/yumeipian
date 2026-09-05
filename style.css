@@ -36,8 +36,8 @@ html, body {
 
 #btn {
   position: relative;
-  width: 86px;
-  height: 54px;
+  width: 92px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -62,14 +62,14 @@ html, body {
 
 .btn-aura {
   position: absolute;
-  top: -6px;
-  left: -6px;
-  right: -6px;
-  bottom: -6px;
-  border-radius: 16px;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  border-radius: 18px;
   z-index: 1;
-  filter: blur(10px);
-  opacity: 0.7;
+  filter: blur(12px);
+  opacity: 0.75;
   transition: all 0.4s ease;
 }
 
@@ -77,11 +77,11 @@ html, body {
   position: relative;
   width: 100%;
   height: 100%;
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
-  background: rgba(8, 12, 20, 0.75);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(10, 14, 22, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.3);
   z-index: 2;
   display: flex;
@@ -92,12 +92,14 @@ html, body {
 }
 
 .btn-img {
-  width: 100%;
-  height: 100%;
+  width: auto;
+  height: auto;
+  max-width: 90%;
+  max-height: 90%;
   object-fit: contain;
   z-index: 3;
   transition: transform 0.3s ease, filter 0.3s ease;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.7));
 }
 
 #btn:hover .btn-img {
@@ -128,26 +130,26 @@ html, body {
   left: 0;
   right: 0;
   bottom: 0;
-  border-radius: 12px;
+  border-radius: 14px;
   z-index: 5;
   pointer-events: none;
   transition: all 0.4s ease;
 }
 
 .style-0 .btn-aura { background: linear-gradient(90deg, #00ff66, #00f0ff, #ff0077); }
-.style-0 .btn-frame { border: 1.5px solid rgba(0, 255, 102, 0.6); }
-.style-0 .btn-border { box-shadow: inset 0 0 8px rgba(0, 255, 102, 0.3); }
+.style-0 .btn-frame { border: 1.5px solid rgba(0, 255, 102, 0.7); }
+.style-0 .btn-border { box-shadow: inset 0 0 10px rgba(0, 255, 102, 0.4); }
 
 .style-1 .btn-aura { background: radial-gradient(circle, #ff00aa, #00f0ff); }
-.style-1 .btn-frame { border: 1.5px dashed #00f0ff; border-radius: 20px; }
-.style-1 .btn-border { box-shadow: inset 0 0 10px rgba(255, 0, 170, 0.4); }
+.style-1 .btn-frame { border: 1.5px dashed #00f0ff; border-radius: 22px; }
+.style-1 .btn-border { box-shadow: inset 0 0 12px rgba(255, 0, 170, 0.4); }
 
 .style-2 .btn-aura { background: #00f0ff; opacity: 0.85; }
 .style-2 .btn-frame { border: 2px solid #00f0ff; box-shadow: 0 0 16px #00f0ff; }
 .style-2 .btn-border { border: 1px solid rgba(255, 255, 255, 0.6); }
 
 .style-3 .btn-aura { background: #bc13fe; }
-.style-3 .btn-frame { border: 1.5px solid #bc13fe; border-radius: 24px; }
+.style-3 .btn-frame { border: 1.5px solid #bc13fe; border-radius: 26px; }
 .style-3 .btn-border { box-shadow: inset 0 0 12px #bc13fe; }
 
 .style-4 .btn-aura { background: #00ff66; opacity: 0.8; }
@@ -163,7 +165,7 @@ html, body {
 .style-6 .btn-border { border-bottom: 2px solid #00f0ff; }
 
 .style-7 .btn-aura { background: linear-gradient(135deg, #134074, #8da9c4); }
-.style-7 .btn-frame { border: 1.5px solid #8da9c4; border-radius: 18px; }
+.style-7 .btn-frame { border: 1.5px solid #8da9c4; border-radius: 20px; }
 .style-7 .btn-border { box-shadow: inset 0 0 8px #8da9c4; }
 
 .style-8 .btn-aura { background: radial-gradient(circle, #f05941, #22092c); }
@@ -183,7 +185,7 @@ html, body {
 .style-11 .btn-border { box-shadow: inset 0 0 10px #e94560; }
 
 .style-12 .btn-aura { background: #3282b8; }
-.style-12 .btn-frame { border: 1.5px solid #bbe1fa; border-radius: 20px; }
+.style-12 .btn-frame { border: 1.5px solid #bbe1fa; border-radius: 22px; }
 .style-12 .btn-border { box-shadow: inset 0 0 12px #3282b8; }
 
 .style-13 .btn-aura { background: #c72c41; }
@@ -191,5 +193,5 @@ html, body {
 .style-13 .btn-border { box-shadow: inset 0 0 12px #c72c41; }
 
 .style-14 .btn-aura { background: radial-gradient(circle, #f72585, #4cc9f0); }
-.style-14 .btn-frame { border: 2px solid #4cc9f0; box-shadow: 0 0 16px #f72585; border-radius: 20px; }
+.style-14 .btn-frame { border: 2px solid #4cc9f0; box-shadow: 0 0 16px #f72585; border-radius: 22px; }
 .style-14 .btn-border { box-shadow: inset 0 0 12px #f72585; }

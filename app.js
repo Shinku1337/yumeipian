@@ -3,7 +3,7 @@
 
   const TOTAL_MODES = 15;
   const STORAGE_KEY = 'yump_style_idx';
-  const HUE_STEPS = 12;
+  const HUE_STEPS = 18;
 
   let currentMode = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
   if (isNaN(currentMode) || currentMode < 0 || currentMode >= TOTAL_MODES) {
@@ -20,7 +20,7 @@
   function updateBtnStyle() {
     btn.className = 'style-' + currentMode;
     if (btnImg) {
-      btnImg.src = currentMode % 2 === 0 ? 'images/YuMeiPian.png' : encodeURI('images/愈美片.png');
+      btnImg.src = currentMode % 2 === 0 ? 'images/YuMeiPian.png' : 'images/愈美片.png';
     }
   }
   updateBtnStyle();
@@ -148,125 +148,25 @@
   let sprites = [];
   const rainbowCache = [[], []];
 
-  function cropAlphaBoundingBox(srcCanvas) {
-    const sCtx = srcCanvas.getContext('2d');
-    const w = srcCanvas.width, h = srcCanvas.height;
-    const imgData = sCtx.getImageData(0, 0, w, h);
-    const d = imgData.data;
-
-    let minX = w, maxX = 0, minY = h, maxY = 0;
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const idx = (y * w + x) * 4;
-        if (d[idx + 3] > 15) {
-          if (x < minX) minX = x;
-          if (x > maxX) maxX = x;
-          if (y < minY) minY = y;
-          if (y > maxY) maxY = y;
-        }
-      }
-    }
-
-    if (minX > maxX || minY > maxY) return srcCanvas;
-
-    const cropW = maxX - minX + 1;
-    const cropH = maxY - minY + 1;
-    const dest = document.createElement('canvas');
-    dest.width = cropW;
-    dest.height = cropH;
-    const dCtx = dest.getContext('2d');
-    dCtx.drawImage(srcCanvas, minX, minY, cropW, cropH, 0, 0, cropW, cropH);
-    return dest;
-  }
-
-  function processImage3D(rawImg) {
-    const c = document.createElement('canvas');
-    const w = rawImg.naturalWidth || rawImg.width;
-    const h = rawImg.naturalHeight || rawImg.height;
-    c.width = w;
-    c.height = h;
-    const cCtx = c.getContext('2d');
-    cCtx.drawImage(rawImg, 0, 0);
-
-    const imgData = cCtx.getImageData(0, 0, w, h);
-    const d = imgData.data;
-
-    const visited = new Uint8Array(w * h);
-    const queue = new Int32Array(w * h);
-    let qHead = 0, qTail = 0;
-
-    function isBg(idx) {
-      return d[idx] > 225 && d[idx + 1] > 225 && d[idx + 2] > 225;
-    }
-
-    for (let x = 0; x < w; x++) {
-      const topP = x;
-      if (isBg(topP * 4)) { queue[qTail++] = topP; visited[topP] = 1; }
-      const botP = (h - 1) * w + x;
-      if (isBg(botP * 4)) { queue[qTail++] = botP; visited[botP] = 1; }
-    }
-    for (let y = 0; y < h; y++) {
-      const leftP = y * w;
-      if (isBg(leftP * 4)) { queue[qTail++] = leftP; visited[leftP] = 1; }
-      const rightP = y * w + (w - 1);
-      if (isBg(rightP * 4)) { queue[qTail++] = rightP; visited[rightP] = 1; }
-    }
-
-    while (qHead < qTail) {
-      const p = queue[qHead++];
-      const qx = p % w;
-      const qy = (p / w) | 0;
-      const idx = p * 4;
-
-      const minV = Math.min(d[idx], d[idx + 1], d[idx + 2]);
-      if (minV > 245) {
-        d[idx + 3] = 0;
-      } else {
-        d[idx + 3] = Math.max(0, Math.floor((245 - minV) * 12));
-      }
-
-      if (qx > 0) {
-        const np = p - 1;
-        if (!visited[np] && isBg(np * 4)) { visited[np] = 1; queue[qTail++] = np; }
-      }
-      if (qx < w - 1) {
-        const np = p + 1;
-        if (!visited[np] && isBg(np * 4)) { visited[np] = 1; queue[qTail++] = np; }
-      }
-      if (qy > 0) {
-        const np = p - w;
-        if (!visited[np] && isBg(np * 4)) { visited[np] = 1; queue[qTail++] = np; }
-      }
-      if (qy < h - 1) {
-        const np = p + w;
-        if (!visited[np] && isBg(np * 4)) { visited[np] = 1; queue[qTail++] = np; }
-      }
-    }
-
-    cCtx.putImageData(imgData, 0, 0);
-    return cropAlphaBoundingBox(c);
-  }
-
-  function processImageFlat(rawImg) {
-    const c = document.createElement('canvas');
-    c.width = rawImg.naturalWidth || rawImg.width;
-    c.height = rawImg.naturalHeight || rawImg.height;
-    const cCtx = c.getContext('2d');
-    cCtx.drawImage(rawImg, 0, 0);
-    return cropAlphaBoundingBox(c);
-  }
-
   function buildRainbowCache() {
     for (let s = 0; s < sprites.length; s++) {
       const src = sprites[s];
       for (let h = 0; h < HUE_STEPS; h++) {
         const deg = h * (360 / HUE_STEPS);
         const c = document.createElement('canvas');
-        c.width = src.width;
-        c.height = src.height;
+        c.width = src.naturalWidth || src.width;
+        c.height = src.naturalHeight || src.height;
         const cCtx = c.getContext('2d');
-        cCtx.filter = `hue-rotate(${deg}deg) saturate(2.4) brightness(1.1)`;
+
         cCtx.drawImage(src, 0, 0);
+
+        cCtx.globalCompositeOperation = 'multiply';
+        cCtx.fillStyle = `hsl(${deg}, 100%, 55%)`;
+        cCtx.fillRect(0, 0, c.width, c.height);
+
+        cCtx.globalCompositeOperation = 'destination-in';
+        cCtx.drawImage(src, 0, 0);
+
         rainbowCache[s].push(c);
       }
     }
@@ -280,13 +180,7 @@
     function check() {
       loaded++;
       if (loaded === 2) {
-        try {
-          const spriteFlat = processImageFlat(img1);
-          const sprite3D = processImage3D(img2);
-          sprites = [spriteFlat, sprite3D];
-        } catch (e) {
-          sprites = [img1, img2];
-        }
+        sprites = [img1, img2];
         buildRainbowCache();
         callback();
       }
@@ -295,7 +189,7 @@
     img1.onload = check;
     img2.onload = check;
     img1.src = 'images/YuMeiPian.png';
-    img2.src = encodeURI('images/愈美片.png');
+    img2.src = 'images/愈美片.png';
   }
 
   function drawSprite(targetCtx, spriteIdx, isRainbow, hue, x, y, w, h, angle, alpha = 1.0, blendMode = 'source-over') {
@@ -309,7 +203,7 @@
     if (!isRainbow || !rainbowCache[spriteIdx] || rainbowCache[spriteIdx].length === 0) {
       img = sprites[spriteIdx];
     } else {
-      const step = (Math.round((hue % 360) / (360 / HUE_STEPS)) + HUE_STEPS) % HUE_STEPS;
+      const step = ((Math.round((hue % 360) / (360 / HUE_STEPS)) % HUE_STEPS) + HUE_STEPS) % HUE_STEPS;
       img = rainbowCache[spriteIdx][step] || sprites[spriteIdx];
     }
 
@@ -377,7 +271,7 @@
       }
       if (this.items.length > 25) this.items.shift();
     },
-    render(time) {
+    render() {
       ctx.fillStyle = 'rgba(3, 3, 6, 0.22)';
       ctx.fillRect(0, 0, width, height);
 
@@ -400,7 +294,7 @@
         item.x += item.vx;
         item.y += item.vy;
         item.rot += item.rotSpeed;
-        item.hue = (item.hue + 1.2) % 360;
+        item.hue = (item.hue + 1.8) % 360;
         item.scalePulse += (1.0 - item.scalePulse) * 0.1;
 
         let hit = false;
@@ -433,13 +327,13 @@
           this.flashes.push({ hue: item.hue, alpha: 0.6 });
         }
 
-        item.trail.push({ x: item.x, y: item.y, rot: item.rot });
+        item.trail.push({ x: item.x, y: item.y, rot: item.rot, hue: item.hue });
         if (item.trail.length > 5) item.trail.shift();
 
         for (let t = 0; t < item.trail.length - 1; t++) {
           const tr = item.trail[t];
           const tAlpha = (t / item.trail.length) * 0.25;
-          drawSprite(ctx, item.spriteIdx, item.isRainbow, item.hue, tr.x, tr.y, item.w, item.h, tr.rot, tAlpha, 'lighter');
+          drawSprite(ctx, item.spriteIdx, item.isRainbow, tr.hue, tr.x, tr.y, item.w, item.h, tr.rot, tAlpha, 'lighter');
         }
 
         const curW = item.w * item.scalePulse;
@@ -469,8 +363,6 @@
 
       const targetX = mouse.active ? mouse.x : cx;
       const targetY = mouse.active ? mouse.y : cy;
-      const symmetry = 8;
-      const sliceAngle = (Math.PI * 2) / symmetry;
 
       this.rotAngle += 0.006;
 
@@ -486,7 +378,7 @@
           const angle = (Math.PI * 2 / ring.count) * i + time * ring.speed;
           const px = Math.cos(angle) * currentR;
           const py = Math.sin(angle) * currentR;
-          const hue = (time * 0.1 + r * 60 + i * 30) % 360;
+          const hue = (time * 0.15 + r * 60 + i * 30) % 360;
           const sprite = sprites[ring.spriteIdx];
           const aspect = sprite.height / sprite.width;
           const w = ring.size * pulse;
@@ -530,7 +422,7 @@
     onClick() {
       this.stars.forEach(s => { s.z = Math.random() * 300 + 60; });
     },
-    render(time) {
+    render() {
       ctx.fillStyle = 'rgba(2, 2, 5, 0.28)';
       ctx.fillRect(0, 0, width, height);
 
@@ -546,7 +438,7 @@
         s.pz = s.z;
         s.z -= speed;
         s.rot += s.rotSpeed;
-        s.hue = (s.hue + 1) % 360;
+        s.hue = (s.hue + 1.8) % 360;
 
         if (s.z <= 30) {
           Object.assign(s, this.createStar(false));
@@ -615,7 +507,7 @@
         o.vy += (dy / dist) * force;
       });
     },
-    render(time) {
+    render() {
       ctx.fillStyle = 'rgba(3, 2, 7, 0.25)';
       ctx.fillRect(0, 0, width, height);
 
@@ -642,7 +534,7 @@
         o.x += o.vx;
         o.y += o.vy;
         o.rot += o.rotSpeed;
-        o.hue = (o.hue + 0.8) % 360;
+        o.hue = (o.hue + 1.6) % 360;
 
         if (dist < 260) {
           ctx.save();
@@ -714,7 +606,7 @@
           if (itemY < -boxH || itemY > height + boxH) continue;
 
           const progress = 1 - (j / col.length);
-          const hue = (time * 0.1 + col.hueOffset + j * 20) % 360;
+          const hue = (time * 0.15 + col.hueOffset + j * 25) % 360;
           const alpha = progress * (j === 0 ? 1 : 0.75);
 
           drawSprite(ctx, col.spriteIdx, col.isRainbow, hue, col.x + offsetX, itemY, boxW, boxH, 0, alpha, col.isRainbow ? 'lighter' : 'source-over');
@@ -749,7 +641,7 @@
         n.y = (Math.random() - 0.5) * 25;
       });
     },
-    render(time) {
+    render() {
       ctx.fillStyle = 'rgba(3, 1, 6, 0.25)';
       ctx.fillRect(0, 0, width, height);
 
@@ -764,6 +656,7 @@
 
       for (let i = 0; i < this.nodes.length; i++) {
         const n = this.nodes[i];
+        n.hue = (n.hue + 1.8) % 360;
 
         for (let step = 0; step < 2; step++) {
           const dx = sigma * (n.y - n.x);
@@ -888,7 +781,7 @@
         const bob = Math.sin(time * 0.0025 + idx * 2) * 28;
         const posY = horizon - 90 + bob;
         const posX = cx + m.x;
-        const hue = (time * 0.1 + idx * 90) % 360;
+        const hue = (time * 0.15 + idx * 90) % 360;
         const sprite = sprites[m.spriteIdx];
         const aspect = sprite.height / sprite.width;
         const h = m.w * aspect;
@@ -939,7 +832,7 @@
         const xB = cx + Math.cos(theta + Math.PI) * radius;
         const zB = Math.sin(theta + Math.PI);
 
-        const hue = (time * 0.1 + i * 18) % 360;
+        const hue = (time * 0.15 + i * 20) % 360;
 
         ctx.save();
         ctx.strokeStyle = `hsla(${hue}, 100%, 65%, 0.45)`;
@@ -951,7 +844,7 @@
         ctx.restore();
 
         strandA.push({ x: xA, y, z: zA, hue, spriteIdx: 0, isRainbow: false });
-        strandB.push({ x: xB, y, z: zB, hue, spriteIdx: 1, isRainbow: true });
+        strandB.push({ x: xB, y, z: zB, hue: (hue + 180) % 360, spriteIdx: 1, isRainbow: true });
       }
 
       const allPoints = strandA.concat(strandB).sort((a, b) => a.z - b.z);
@@ -990,7 +883,7 @@
 
         const spriteIdx = i % sprites.length;
         const sprite = sprites[spriteIdx];
-        const hue = (time * 0.12 + i * 36) % 360;
+        const hue = (time * 0.18 + i * 40) % 360;
         const angle = rot * (i % 2 === 0 ? 1 : -1) * 2 + i * 0.15;
         const aspect = sprite.height / sprite.width;
         const w = 240 * scale;
@@ -1048,7 +941,7 @@
         t.glitchTimer = Math.max(0, t.glitchTimer - 1);
         const isGlitching = t.glitchTimer > 0 || Math.random() < 0.03;
         const glitchShift = isGlitching ? (Math.random() - 0.5) * 20 : 0;
-        const curHue = (time * 0.1 + idx * 45) % 360;
+        const curHue = (time * 0.18 + idx * 50) % 360;
 
         ctx.save();
         ctx.strokeStyle = t.isRainbow ? `hsla(${curHue}, 100%, 60%, 0.7)` : '#00ff88';
@@ -1106,7 +999,7 @@
         b.vy += (Math.random() - 0.5) * 16;
       });
     },
-    render(time) {
+    render() {
       ctx.fillStyle = 'rgba(2, 1, 5, 0.25)';
       ctx.fillRect(0, 0, width, height);
 
@@ -1131,7 +1024,7 @@
 
         b.x += b.vx;
         b.y += b.vy;
-        b.hue = (b.hue + 1) % 360;
+        b.hue = (b.hue + 1.8) % 360;
 
         if (b.x < -b.w) b.x = width + b.w;
         if (b.x > width + b.w) b.x = -b.w;
@@ -1186,6 +1079,8 @@
 
       for (let i = 0; i < this.nodes.length; i++) {
         const n = this.nodes[i];
+        n.hue = (n.hue + 1.8) % 360;
+
         const k = 0.045;
         n.vx += (n.origX - n.x) * k;
         n.vy += (n.origY - n.y) * k;
@@ -1286,7 +1181,7 @@
         pulse.r += pulse.speed;
 
         ctx.save();
-        ctx.strokeStyle = `hsla(${(time * 0.15 + pulse.r) % 360}, 100%, 65%, ${1 - pulse.r / pulse.maxR})`;
+        ctx.strokeStyle = `hsla(${(time * 0.18 + pulse.r) % 360}, 100%, 65%, ${1 - pulse.r / pulse.maxR})`;
         ctx.lineWidth = 2.5;
         ctx.beginPath();
         ctx.arc(cx, cy, pulse.r, 0, Math.PI * 2);
@@ -1311,8 +1206,9 @@
         const px = cx + Math.cos(b.angle) * currentR;
         const py = cy + Math.sin(b.angle) * currentR;
         const scale = 1 + b.kick * 0.015;
+        const hue = (time * 0.18 + b.hue) % 360;
 
-        drawSprite(ctx, b.spriteIdx, b.isRainbow, (b.hue + time * 0.1) % 360, px, py, b.w * scale, b.h * scale, b.angle + Math.PI / 2, 0.95, b.isRainbow ? 'lighter' : 'source-over');
+        drawSprite(ctx, b.spriteIdx, b.isRainbow, hue, px, py, b.w * scale, b.h * scale, b.angle + Math.PI / 2, 0.95, b.isRainbow ? 'lighter' : 'source-over');
       });
     }
   });
@@ -1360,7 +1256,7 @@
         it.x += it.vx * timeScale;
         it.y += it.vy * timeScale;
         it.rot += it.rotSpeed * timeScale;
-        it.hue = (it.hue + 1 * timeScale) % 360;
+        it.hue = (it.hue + 1.8 * timeScale) % 360;
 
         if (it.x <= it.w / 2 || it.x >= width - it.w / 2) it.vx *= -1;
         if (it.y <= it.h / 2 || it.y >= height - it.h / 2) it.vy *= -1;
@@ -1456,6 +1352,7 @@
         frag.vy += 0.1;
         frag.vx *= 0.985;
         frag.rot += frag.rotSpd;
+        frag.hue = (frag.hue + 2.0) % 360;
         frag.alpha -= frag.decay;
 
         if (frag.alpha <= 0) {
