@@ -25,6 +25,40 @@
   }
   updateBtnStyle();
 
+  const warnModal = document.getElementById('warn-modal');
+  const warnBtn = document.getElementById('warn-btn');
+
+  function getCookie(name) {
+    const match = document.cookie.match(new RegExp('(^|;\\s*)(' + name + ')=([^;]*)'));
+    return match ? decodeURIComponent(match[3]) : null;
+  }
+
+  function setCookie(name, val, days) {
+    const maxAge = (days || 365) * 86400;
+    document.cookie = name + '=' + encodeURIComponent(val) + '; max-age=' + maxAge + '; path=/; SameSite=Lax';
+    try { localStorage.setItem(name, val); } catch (e) {}
+  }
+
+  const isAck = getCookie('epilepsy_ack') === '1' || (function () {
+    try { return localStorage.getItem('epilepsy_ack') === '1'; } catch (e) { return false; }
+  })();
+
+  if (!isAck && warnModal) {
+    warnModal.style.display = 'flex';
+    if (warnBtn) {
+      warnBtn.addEventListener('click', () => {
+        setCookie('epilepsy_ack', '1', 365);
+        warnModal.style.opacity = '0';
+        warnModal.style.visibility = 'hidden';
+        setTimeout(() => {
+          warnModal.style.display = 'none';
+        }, 350);
+      });
+    }
+  } else if (warnModal) {
+    warnModal.style.display = 'none';
+  }
+
   let width = 0, height = 0, cx = 0, cy = 0;
   let dpr = 1;
   let uiScale = 1;
