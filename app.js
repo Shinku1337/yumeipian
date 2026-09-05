@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const TOTAL_MODES = 15;
+  const TOTAL_MODES = 30;
   const STORAGE_KEY = 'yump_style_idx';
   const HUE_STEPS = 18;
 
@@ -225,6 +225,21 @@
     else if (e.key === 'e') switchMode(12);
     else if (e.key === 'r') switchMode(13);
     else if (e.key === 't') switchMode(14);
+    else if (e.key === 'y') switchMode(15);
+    else if (e.key === 'u') switchMode(16);
+    else if (e.key === 'i') switchMode(17);
+    else if (e.key === 'o') switchMode(18);
+    else if (e.key === 'p') switchMode(19);
+    else if (e.key === 'a') switchMode(20);
+    else if (e.key === 's') switchMode(21);
+    else if (e.key === 'd') switchMode(22);
+    else if (e.key === 'f') switchMode(23);
+    else if (e.key === 'g') switchMode(24);
+    else if (e.key === 'h') switchMode(25);
+    else if (e.key === 'j') switchMode(26);
+    else if (e.key === 'k') switchMode(27);
+    else if (e.key === 'l') switchMode(28);
+    else if (e.key === 'z') switchMode(29);
   });
 
   let sprites = [];
@@ -1466,6 +1481,598 @@
 
         drawSprite(ctx, frag.spriteIdx, frag.isRainbow, frag.hue, frag.x, frag.y, frag.w, frag.h, frag.rot, frag.alpha, frag.isRainbow ? 'lighter' : 'source-over');
       }
+    }
+  });
+
+  // 15: PRISM TEMPLE - mirrored crystalline architecture.
+  modes.push({
+    shards: [],
+    burst: 0,
+    init() {
+      this.burst = 0;
+      const count = width < 600 ? 9 : 14;
+      this.shards = Array.from({ length: count }, (_, i) => ({
+        lane: (i + 0.5) / count,
+        depth: Math.random(),
+        speed: 0.0025 + Math.random() * 0.002,
+        side: i % 2 ? 1 : -1
+      }));
+    },
+    onClick() { this.burst = 1; },
+    render(time) {
+      const horizon = height * 0.38;
+      const bg = ctx.createLinearGradient(0, 0, 0, height);
+      bg.addColorStop(0, '#02030a');
+      bg.addColorStop(0.55, '#10101a');
+      bg.addColorStop(1, '#030305');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, width, height);
+
+      this.burst *= 0.94;
+      const drift = mouse.active ? (mouse.x - cx) * 0.08 : 0;
+      ctx.save();
+      ctx.translate(drift, 0);
+      ctx.lineWidth = 1;
+      for (let i = -7; i <= 7; i++) {
+        const hue = (time * 0.04 + i * 22 + 190) % 360;
+        ctx.strokeStyle = `hsla(${hue}, 90%, 70%, 0.24)`;
+        ctx.beginPath();
+        ctx.moveTo(cx, horizon);
+        ctx.lineTo(cx + i * width * 0.16, height);
+        ctx.stroke();
+      }
+      for (let i = 0; i < 11; i++) {
+        const p = i / 10;
+        const y = horizon + Math.pow(p, 2.2) * (height - horizon);
+        ctx.strokeStyle = `rgba(255,255,255,${0.04 + p * 0.18})`;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+      }
+      ctx.restore();
+
+      this.shards.forEach((shard, i) => {
+        shard.depth = (shard.depth + shard.speed * (1 + this.burst * 5)) % 1;
+        const p = Math.pow(shard.depth, 1.8);
+        const y = horizon + p * (height - horizon);
+        const spread = (40 + p * width * 0.54) * shard.side;
+        const x = cx + spread + Math.sin(time * 0.001 + i) * 18;
+        const size = (30 + p * 150) * getScale();
+        const hue = (185 + i * 17 + time * 0.05) % 360;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(shard.side * 0.45 + time * 0.0003);
+        ctx.fillStyle = `hsla(${hue}, 90%, 58%, 0.12)`;
+        ctx.strokeStyle = `hsla(${hue}, 100%, 76%, 0.75)`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(0, -size); ctx.lineTo(size * 0.48, size * 0.62);
+        ctx.lineTo(-size * 0.32, size * 0.34); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        ctx.restore();
+      });
+
+      const s = getScale() * (1 + this.burst * 0.22);
+      const heroW = Math.min(width * 0.72, 340 * s);
+      const heroH = heroW * (sprites[0].height / sprites[0].width);
+      const glow = 0.88 + Math.sin(time * 0.003) * 0.1;
+      drawSprite(ctx, 0, true, time * 0.08, cx, horizon + (height - horizon) * 0.34,
+        heroW, heroH, Math.sin(time * 0.001) * 0.08, glow, 'lighter');
+    }
+  });
+
+  // 16: LIQUID SIGNAL - tactile waves and refraction ripples.
+  modes.push({
+    ripples: [],
+    phase: 0,
+    init() { this.ripples = []; this.phase = 0; },
+    onClick(x, y) { this.ripples.push({ x, y, r: 5, life: 1 }); },
+    render(time) {
+      const bg = ctx.createLinearGradient(0, 0, width, height);
+      bg.addColorStop(0, '#001518');
+      bg.addColorStop(0.5, '#05282b');
+      bg.addColorStop(1, '#140918');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, width, height);
+      this.phase += 0.018;
+
+      const rows = width < 600 ? 9 : 13;
+      const stepY = height / (rows + 1);
+      const amp = Math.min(width * 0.11, 85);
+      for (let row = 0; row < rows; row++) {
+        const y0 = (row + 1) * stepY;
+        const hue = 160 + row * 8;
+        ctx.beginPath();
+        for (let x = -20; x <= width + 20; x += 10) {
+          const pointer = mouse.active ? Math.max(0, 1 - Math.hypot(x - mouse.x, y0 - mouse.y) / 220) : 0;
+          const y = y0 + Math.sin(x * 0.018 + this.phase + row * 0.72) * (amp * 0.34 + pointer * amp);
+          if (x === -20) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = `hsla(${hue}, 85%, 66%, ${0.18 + row / rows * 0.2})`;
+        ctx.lineWidth = 1.2 + row / rows * 1.8;
+        ctx.stroke();
+
+        const px = ((time * (0.025 + row * 0.001) + row * 83) % (width + 220)) - 110;
+        const py = y0 + Math.sin(px * 0.018 + this.phase + row * 0.72) * amp * 0.34;
+        const spriteIdx = row % 2;
+        const w = Math.min(width < 600 ? 104 : 142, stepY * 2.15);
+        const h = w * (sprites[spriteIdx].height / sprites[spriteIdx].width);
+        drawSprite(ctx, spriteIdx, row % 3 === 0, hue + time * 0.04, px, py, w, h,
+          Math.cos(px * 0.018 + this.phase) * 0.35, 0.9, row % 3 === 0 ? 'lighter' : 'source-over');
+      }
+
+      for (let i = this.ripples.length - 1; i >= 0; i--) {
+        const r = this.ripples[i];
+        r.r += 7; r.life -= 0.018;
+        ctx.strokeStyle = `rgba(123,255,224,${r.life * 0.7})`;
+        ctx.lineWidth = 1 + r.life * 5;
+        ctx.beginPath(); ctx.ellipse(r.x, r.y, r.r, r.r * 0.45, 0, 0, Math.PI * 2); ctx.stroke();
+        if (r.life <= 0) this.ripples.splice(i, 1);
+      }
+    }
+  });
+
+  // 17: DATA CUBE - a rotating wireframe vault with image nodes.
+  modes.push({
+    angleX: 0,
+    angleY: 0,
+    kick: 0,
+    init() { this.angleX = 0.45; this.angleY = 0; this.kick = 0; },
+    onClick() { this.kick = 0.09; },
+    render(time) {
+      ctx.fillStyle = '#02070b';
+      ctx.fillRect(0, 0, width, height);
+      this.kick *= 0.95;
+      this.angleY += 0.006 + this.kick;
+      this.angleX = 0.45 + Math.sin(time * 0.0005) * 0.18 + (mouse.active ? (mouse.y - cy) / height * 0.35 : 0);
+      const yaw = this.angleY + (mouse.active ? (mouse.x - cx) / width * 0.5 : 0);
+      const unit = Math.min(width, height) * (width < 600 ? 0.29 : 0.34);
+      const points = [];
+      for (let xi = -1; xi <= 1; xi += 2) for (let yi = -1; yi <= 1; yi += 2) for (let zi = -1; zi <= 1; zi += 2) {
+        let x = xi, y = yi, z = zi;
+        const x1 = x * Math.cos(yaw) - z * Math.sin(yaw);
+        const z1 = x * Math.sin(yaw) + z * Math.cos(yaw);
+        const y1 = y * Math.cos(this.angleX) - z1 * Math.sin(this.angleX);
+        const z2 = y * Math.sin(this.angleX) + z1 * Math.cos(this.angleX);
+        const perspective = 3.8 / (4.5 + z2);
+        points.push({ x: cx + x1 * unit * perspective, y: cy + y1 * unit * perspective, z: z2, xi, yi, zi });
+      }
+      const edge = (a, b) => Math.abs(a.xi - b.xi) + Math.abs(a.yi - b.yi) + Math.abs(a.zi - b.zi) === 2;
+      for (let i = 0; i < points.length; i++) for (let j = i + 1; j < points.length; j++) if (edge(points[i], points[j])) {
+        const hue = (time * 0.04 + i * 33) % 360;
+        ctx.strokeStyle = `hsla(${hue},85%,68%,0.42)`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(points[i].x, points[i].y); ctx.lineTo(points[j].x, points[j].y); ctx.stroke();
+      }
+      points.sort((a, b) => b.z - a.z).forEach((p, i) => {
+        const spriteIdx = (p.xi + p.yi + p.zi + 3) % 2;
+        const w = (58 + (p.z + 1.8) * 13) * getScale();
+        const h = w * (sprites[spriteIdx].height / sprites[spriteIdx].width);
+        drawSprite(ctx, spriteIdx, i % 3 === 0, time * 0.07 + i * 40, p.x, p.y, w, h,
+          yaw * 0.25, 0.78 + (p.z + 1.5) * 0.06, i % 3 === 0 ? 'lighter' : 'source-over');
+      });
+      const ringR = unit * 1.12;
+      ctx.strokeStyle = 'rgba(88,255,211,0.2)';
+      ctx.lineWidth = 1;
+      for (let r = 1; r <= 3; r++) {
+        ctx.beginPath(); ctx.ellipse(cx, cy, ringR * r / 3, ringR * 0.24 * r / 3, yaw, 0, Math.PI * 2); ctx.stroke();
+      }
+    }
+  });
+
+  // 18: FREQUENCY DISC - turntable rings driven by synthetic waveforms.
+  modes.push({
+    spin: 0,
+    impact: 0,
+    init() { this.spin = 0; this.impact = 0; },
+    onClick() { this.impact = 1; },
+    render(time) {
+      ctx.fillStyle = 'rgba(7,4,8,0.32)';
+      ctx.fillRect(0, 0, width, height);
+      this.spin += 0.012 + this.impact * 0.03;
+      this.impact *= 0.92;
+      const maxR = Math.min(width, height) * 0.45;
+      const rings = width < 600 ? 7 : 10;
+      ctx.save(); ctx.translate(cx, cy);
+      for (let r = rings; r >= 1; r--) {
+        const radius = maxR * r / rings;
+        const hue = (12 + r * 19 + time * 0.025) % 360;
+        ctx.strokeStyle = `hsla(${hue},92%,64%,${0.1 + r / rings * 0.2})`;
+        ctx.lineWidth = 1 + (r % 3);
+        ctx.beginPath(); ctx.arc(0, 0, radius + Math.sin(time * 0.004 + r) * 4, 0, Math.PI * 2); ctx.stroke();
+        const bars = width < 600 ? 24 : 36;
+        for (let i = 0; i < bars; i++) {
+          const a = i / bars * Math.PI * 2 + this.spin * (r % 2 ? 1 : -1);
+          const energy = 5 + (Math.sin(i * 1.7 + time * 0.007 + r) + 1) * 8 + this.impact * 28;
+          ctx.strokeStyle = `hsla(${hue + i * 2},95%,68%,0.55)`;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(a) * radius, Math.sin(a) * radius);
+          ctx.lineTo(Math.cos(a) * (radius + energy), Math.sin(a) * (radius + energy));
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+      const orbit = maxR * 0.68;
+      for (let i = 0; i < 6; i++) {
+        const a = this.spin * (i % 2 ? -0.8 : 1) + i * Math.PI / 3;
+        const spriteIdx = i % 2;
+        const w = (width < 600 ? 78 : 112) * getScale();
+        const h = w * (sprites[spriteIdx].height / sprites[spriteIdx].width);
+        drawSprite(ctx, spriteIdx, i % 2 === 0, time * 0.06 + i * 50,
+          cx + Math.cos(a) * orbit, cy + Math.sin(a) * orbit, w, h, a + Math.PI / 2, 0.92,
+          i % 2 === 0 ? 'lighter' : 'source-over');
+      }
+      const centerW = Math.min(width * 0.42, 190 * getScale());
+      drawSprite(ctx, 1, false, 0, cx, cy, centerW,
+        centerW * (sprites[1].height / sprites[1].width), -this.spin * 0.45, 1, 'source-over');
+    }
+  });
+
+  // 19: PRINT RIOT - hard-edged editorial collage and halftone motion.
+  modes.push({
+    panels: [],
+    snap: 0,
+    init() {
+      this.snap = 0;
+      const cols = width < 600 ? 2 : 4;
+      const rows = width < 600 ? 4 : 3;
+      this.panels = [];
+      for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+        this.panels.push({ x, y, cols, rows, shift: 0, seed: Math.random() * 10 });
+      }
+    },
+    onClick() { this.snap = 1; this.panels.forEach(p => { p.shift = (Math.random() - 0.5) * 70; }); },
+    render(time) {
+      ctx.fillStyle = '#f2f0e9';
+      ctx.fillRect(0, 0, width, height);
+      this.snap *= 0.9;
+      this.panels.forEach((p, i) => {
+        p.shift *= 0.88;
+        const gap = width < 600 ? 7 : 10;
+        const cellW = width / p.cols;
+        const cellH = height / p.rows;
+        const x = p.x * cellW + gap / 2 + p.shift;
+        const y = p.y * cellH + gap / 2;
+        const w = cellW - gap;
+        const h = cellH - gap;
+        const colors = ['#111111', '#ff244f', '#15b7a8', '#ffd21f', '#3155d9'];
+        ctx.save();
+        ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+        ctx.fillStyle = colors[(i + Math.floor(time / 900)) % colors.length];
+        ctx.fillRect(x, y, w, h);
+        ctx.fillStyle = i % 2 ? 'rgba(255,255,255,0.34)' : 'rgba(0,0,0,0.2)';
+        const dot = width < 600 ? 8 : 10;
+        for (let dy = y - dot; dy < y + h + dot; dy += dot) {
+          for (let dx = x - dot; dx < x + w + dot; dx += dot) {
+            const rr = 1 + Math.sin(dx * 0.04 + dy * 0.03 + time * 0.003 + p.seed) * 1.2;
+            ctx.beginPath(); ctx.arc(dx, dy, Math.max(0.4, rr), 0, Math.PI * 2); ctx.fill();
+          }
+        }
+        ctx.translate(x + w / 2, y + h / 2);
+        ctx.rotate((i % 2 ? -1 : 1) * (0.08 + this.snap * 0.15));
+        const spriteIdx = i % 2;
+        const imageW = Math.min(w * 1.25, h * 1.65);
+        const imageH = imageW * (sprites[spriteIdx].height / sprites[spriteIdx].width);
+        drawSprite(ctx, spriteIdx, i % 3 === 0, time * 0.12 + i * 47, 0, 0,
+          imageW, imageH, 0, 0.95, i % 3 === 0 ? 'difference' : 'source-over');
+        ctx.restore();
+      });
+      ctx.save();
+      ctx.strokeStyle = '#111'; ctx.lineWidth = width < 600 ? 5 : 8;
+      ctx.strokeRect(2, 2, width - 4, height - 4);
+      ctx.restore();
+    }
+  });
+
+  // 20: KALEIDOSCOPE ALTAR - mirrored radial petals.
+  modes.push({
+    twist: 0, kick: 0,
+    init() { this.twist = 0; this.kick = 0; },
+    onClick() { this.kick = Math.PI / 5; },
+    render(time) {
+      ctx.fillStyle = '#07050b'; ctx.fillRect(0, 0, width, height);
+      this.twist += 0.004; this.kick *= 0.9;
+      const slices = width < 600 ? 10 : 16;
+      const radius = Math.hypot(width, height) * 0.55;
+      ctx.save(); ctx.translate(cx, cy);
+      for (let i = 0; i < slices; i++) {
+        const a = i * Math.PI * 2 / slices + this.twist;
+        ctx.save(); ctx.rotate(a); if (i % 2) ctx.scale(1, -1);
+        const hue = (time * 0.025 + i * 360 / slices) % 360;
+        ctx.fillStyle = `hsla(${hue},90%,54%,0.16)`;
+        ctx.strokeStyle = `hsla(${hue + 35},100%,72%,0.55)`;
+        ctx.beginPath(); ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(radius * 0.18, radius * 0.08, radius * 0.5, radius * 0.22, radius, 0);
+        ctx.bezierCurveTo(radius * 0.5, -radius * 0.22, radius * 0.18, -radius * 0.08, 0, 0);
+        ctx.fill(); ctx.stroke(); ctx.restore();
+      }
+      ctx.restore();
+      const rings = width < 600 ? 2 : 3;
+      for (let r = 1; r <= rings; r++) {
+        const rr = Math.min(width, height) * (0.12 + r * 0.105);
+        const count = r * 4 + 4;
+        for (let i = 0; i < count; i++) {
+          const a = i / count * Math.PI * 2 + this.twist * (r % 2 ? 2 : -1) + this.kick;
+          const si = (i + r) % 2;
+          const w = (width < 600 ? 54 : 72) * getScale();
+          drawSprite(ctx, si, (i + r) % 3 === 0, time * 0.06 + i * 30,
+            cx + Math.cos(a) * rr, cy + Math.sin(a) * rr, w,
+            w * (sprites[si].height / sprites[si].width), a + Math.PI / 2, 0.88,
+            (i + r) % 3 === 0 ? 'lighter' : 'source-over');
+        }
+      }
+    }
+  });
+
+  // 21: TOPOGRAPHIC FIELD - animated terrain contours.
+  modes.push({
+    pulse: 0,
+    init() { this.pulse = 0; },
+    onClick() { this.pulse = 1; },
+    render(time) {
+      ctx.fillStyle = '#07120d'; ctx.fillRect(0, 0, width, height);
+      this.pulse *= 0.94;
+      const step = width < 600 ? 28 : 34;
+      const lines = Math.ceil(height / step) + 4;
+      for (let j = -2; j < lines; j++) {
+        const baseY = j * step;
+        ctx.beginPath();
+        for (let x = -10; x <= width + 10; x += 8) {
+          const m = mouse.active ? Math.max(0, 1 - Math.hypot(x - mouse.x, baseY - mouse.y) / 230) : 0;
+          const terrain = Math.sin(x * 0.012 + j * 0.8 + time * 0.0007) * 13 +
+            Math.sin(x * 0.031 - time * 0.0011 + j) * 7;
+          const y = baseY + terrain - m * (38 + this.pulse * 45);
+          if (x < 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = j % 5 === 0 ? 'rgba(255,211,92,0.75)' : 'rgba(99,235,162,0.34)';
+        ctx.lineWidth = j % 5 === 0 ? 1.8 : 1; ctx.stroke();
+      }
+      const count = width < 600 ? 5 : 8;
+      for (let i = 0; i < count; i++) {
+        const x = (i + 0.5) * width / count;
+        const y = height * (0.18 + ((i * 37) % 64) / 100) + Math.sin(time * 0.0015 + i) * 18;
+        const si = i % 2; const w = (width < 600 ? 78 : 108) * getScale();
+        drawSprite(ctx, si, false, 0, x, y, w, w * (sprites[si].height / sprites[si].width),
+          Math.sin(time * 0.001 + i) * 0.15, 0.95, 'source-over');
+      }
+    }
+  });
+
+  // 22: NEON PINBALL - bumpers, rails and ricocheting pills.
+  modes.push({
+    balls: [], bumpers: [],
+    init() {
+      const count = width < 600 ? 4 : 7;
+      this.balls = Array.from({ length: count }, (_, i) => ({ x: Math.random() * width, y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 7, vy: (Math.random() - 0.5) * 7, si: i % 2, hue: i * 53 }));
+      this.bumpers = Array.from({ length: width < 600 ? 6 : 10 }, (_, i) => ({
+        x: width * (0.15 + Math.random() * 0.7), y: height * (0.12 + Math.random() * 0.72),
+        r: (22 + Math.random() * 15) * getScale(), hue: i * 41 }));
+    },
+    onClick(x, y) { this.bumpers.push({ x, y, r: 34 * getScale(), hue: Math.random() * 360 }); if (this.bumpers.length > 12) this.bumpers.shift(); },
+    render(time) {
+      ctx.fillStyle = 'rgba(4,3,12,0.3)'; ctx.fillRect(0, 0, width, height);
+      this.bumpers.forEach((b, i) => {
+        const glow = 5 + Math.sin(time * 0.005 + i) * 3;
+        ctx.strokeStyle = `hsla(${b.hue + time * 0.04},100%,64%,0.85)`; ctx.lineWidth = 3;
+        ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = glow;
+        ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.stroke(); ctx.shadowBlur = 0;
+      });
+      this.balls.forEach((b) => {
+        b.x += b.vx; b.y += b.vy;
+        if (b.x < 35 || b.x > width - 35) b.vx *= -1;
+        if (b.y < 35 || b.y > height - 35) b.vy *= -1;
+        this.bumpers.forEach(q => {
+          const dx = b.x - q.x, dy = b.y - q.y, d = Math.hypot(dx, dy);
+          if (d < q.r + 28 && d > 0) { const dot = b.vx * dx / d + b.vy * dy / d; b.vx -= 2 * dot * dx / d; b.vy -= 2 * dot * dy / d; b.x += dx / d * 4; b.y += dy / d * 4; }
+        });
+        const si = b.si, w = (width < 600 ? 76 : 96) * getScale();
+        drawSprite(ctx, si, true, b.hue + time * 0.1, b.x, b.y, w,
+          w * (sprites[si].height / sprites[si].width), Math.atan2(b.vy, b.vx), 0.96, 'lighter');
+      });
+    }
+  });
+
+  // 23: FLIP WALL - mechanical split-flap mosaic.
+  modes.push({
+    tiles: [], flipAll: 0,
+    init() {
+      const cols = width < 600 ? 3 : 6, rows = width < 600 ? 7 : 5;
+      this.tiles = Array.from({ length: cols * rows }, (_, i) => ({ i, cols, rows, phase: Math.random() * Math.PI * 2, flip: 0 }));
+    },
+    onClick() { this.tiles.forEach((t, i) => { t.flip = 1 + i * 0.025; }); },
+    render(time) {
+      ctx.fillStyle = '#08090a'; ctx.fillRect(0, 0, width, height);
+      this.tiles.forEach((t) => {
+        t.flip = Math.max(0, t.flip - 0.035);
+        const c = t.i % t.cols, r = Math.floor(t.i / t.cols);
+        const cw = width / t.cols, ch = height / t.rows;
+        const x = c * cw + 4, y = r * ch + 4, w = cw - 8, h = ch - 8;
+        const auto = (Math.sin(time * 0.002 + t.phase) + 1) * 0.5;
+        const squash = Math.max(0.08, Math.abs(Math.cos((auto + t.flip) * Math.PI)));
+        ctx.fillStyle = (c + r) % 2 ? '#171a1b' : '#222628'; ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.strokeRect(x, y, w, h);
+        ctx.fillStyle = 'rgba(0,0,0,0.65)'; ctx.fillRect(x, y + h / 2 - 1, w, 2);
+        const si = (c + r + Math.floor(time / 1400)) % 2;
+        const iw = Math.min(w * 0.86, h * 1.55), ih = iw * (sprites[si].height / sprites[si].width);
+        ctx.save(); ctx.translate(x + w / 2, y + h / 2); ctx.scale(1, squash);
+        drawSprite(ctx, si, t.i % 4 === 0, time * 0.06 + t.i * 19, 0, 0, iw, ih, 0, 0.94,
+          t.i % 4 === 0 ? 'lighter' : 'source-over'); ctx.restore();
+      });
+    }
+  });
+
+  // 24: AURORA CURTAIN - layered polar light ribbons.
+  modes.push({
+    flare: 0, stars: [],
+    init() { this.flare = 0; this.stars = Array.from({ length: width < 600 ? 45 : 80 }, () => ({ x: Math.random() * width, y: Math.random() * height * 0.7, a: Math.random(), s: Math.random() * 1.8 })); },
+    onClick() { this.flare = 1; },
+    render(time) {
+      ctx.fillStyle = '#01070d'; ctx.fillRect(0, 0, width, height); this.flare *= 0.96;
+      this.stars.forEach(st => { ctx.fillStyle = `rgba(255,255,255,${st.a * 0.65})`; ctx.fillRect(st.x, st.y, st.s, st.s); });
+      const bands = width < 600 ? 4 : 7;
+      for (let b = 0; b < bands; b++) {
+        const hue = 125 + b * 24 + Math.sin(time * 0.0004) * 18;
+        const grad = ctx.createLinearGradient(0, 0, 0, height);
+        grad.addColorStop(0, `hsla(${hue},90%,62%,0)`); grad.addColorStop(0.48, `hsla(${hue},90%,58%,${0.09 + this.flare * 0.05})`); grad.addColorStop(1, `hsla(${hue + 35},90%,48%,0)`);
+        ctx.fillStyle = grad; ctx.beginPath();
+        ctx.moveTo(-40, 0);
+        for (let x = -40; x <= width + 40; x += 18) {
+          const y = height * 0.28 + Math.sin(x * 0.009 + time * 0.0008 + b) * (55 + b * 9) + b * 14;
+          ctx.lineTo(x, y);
+        }
+        for (let x = width + 40; x >= -40; x -= 18) {
+          const y = height * 0.82 + Math.sin(x * 0.007 + time * 0.0006 + b + 2) * 70;
+          ctx.lineTo(x, y);
+        }
+        ctx.closePath(); ctx.fill();
+      }
+      const count = width < 600 ? 4 : 7;
+      for (let i = 0; i < count; i++) {
+        const x = width * (i + 0.5) / count + Math.sin(time * 0.001 + i) * 24;
+        const y = height * (0.48 + Math.sin(time * 0.0014 + i * 1.8) * 0.22);
+        const si = i % 2, w = (width < 600 ? 82 : 114) * getScale();
+        drawSprite(ctx, si, i % 2 === 0, 120 + time * 0.035 + i * 22, x, y, w,
+          w * (sprites[si].height / sprites[si].width), Math.sin(time * 0.001 + i) * 0.2, 0.92, i % 2 === 0 ? 'lighter' : 'source-over');
+      }
+    }
+  });
+
+  // 25: CRT OSCILLOSCOPE - phosphor waveforms and scan distortion.
+  modes.push({
+    shock: 0,
+    init() { this.shock = 0; },
+    onClick() { this.shock = 1; },
+    render(time) {
+      ctx.fillStyle = 'rgba(0,8,4,0.34)'; ctx.fillRect(0, 0, width, height); this.shock *= 0.93;
+      ctx.strokeStyle = 'rgba(90,255,145,0.08)'; ctx.lineWidth = 1;
+      const grid = width < 600 ? 32 : 44;
+      for (let x = 0; x < width; x += grid) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
+      for (let y = 0; y < height; y += grid) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); }
+      const waves = 4;
+      for (let wv = 0; wv < waves; wv++) {
+        ctx.beginPath();
+        for (let x = 0; x <= width; x += 4) {
+          const pointer = mouse.active ? Math.max(0, 1 - Math.abs(x - mouse.x) / 200) : 0;
+          const y = height * (wv + 1) / (waves + 1) + Math.sin(x * (0.014 + wv * 0.004) + time * 0.004) * (18 + wv * 5 + pointer * 45 + this.shock * 60);
+          x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+        }
+        ctx.strokeStyle = wv % 2 ? 'rgba(100,255,155,0.72)' : 'rgba(255,213,74,0.7)';
+        ctx.lineWidth = 2; ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 9; ctx.stroke(); ctx.shadowBlur = 0;
+      }
+      const scan = (time * 0.12) % height; ctx.fillStyle = 'rgba(180,255,195,0.07)'; ctx.fillRect(0, scan, width, 5);
+      const count = width < 600 ? 4 : 7;
+      for (let i = 0; i < count; i++) {
+        const x = width * (i + 0.5) / count, y = height * (i % 2 ? 0.36 : 0.66) + Math.sin(time * 0.002 + i) * 25;
+        const si = i % 2, iw = (width < 600 ? 74 : 104) * getScale();
+        drawSprite(ctx, si, false, 0, x, y, iw, iw * (sprites[si].height / sprites[si].width), 0, 0.9, 'source-over');
+      }
+    }
+  });
+
+  // 26: GRAVITY LENS - orbiting arcs bent around a dark core.
+  modes.push({
+    mass: 1,
+    init() { this.mass = 1; },
+    onClick() { this.mass = 1.8; },
+    render(time) {
+      ctx.fillStyle = '#020205'; ctx.fillRect(0, 0, width, height); this.mass += (1 - this.mass) * 0.035;
+      const mx = cx + (mouse.active ? (mouse.x - cx) * 0.18 : 0), my = cy + (mouse.active ? (mouse.y - cy) * 0.18 : 0);
+      const maxR = Math.min(width, height) * 0.46;
+      for (let i = 0; i < 48; i++) {
+        const a = i / 48 * Math.PI * 2 + time * 0.00015;
+        const r = maxR * (0.42 + (i % 7) / 10);
+        ctx.strokeStyle = `hsla(${205 + i * 3},90%,70%,${0.08 + (i % 5) * 0.025})`; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(mx, my, r, a, a + 0.7 + Math.sin(time * 0.001 + i) * 0.2); ctx.stroke();
+      }
+      const coreR = Math.min(width, height) * 0.105 * this.mass;
+      const halo = ctx.createRadialGradient(mx, my, coreR * 0.45, mx, my, coreR * 2.5);
+      halo.addColorStop(0, '#000'); halo.addColorStop(0.42, '#000'); halo.addColorStop(0.55, 'rgba(255,185,80,0.8)'); halo.addColorStop(0.68, 'rgba(80,155,255,0.3)'); halo.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(mx, my, coreR * 2.5, 0, Math.PI * 2); ctx.fill();
+      const count = width < 600 ? 7 : 11;
+      for (let i = 0; i < count; i++) {
+        const a = time * (0.00035 + i * 0.000025) + i * 2.4, r = coreR * (1.9 + i * 0.38);
+        const si = i % 2, iw = Math.max(45, (88 - i * 2) * getScale());
+        drawSprite(ctx, si, i % 3 === 0, 30 + i * 28 + time * 0.03, mx + Math.cos(a) * r, my + Math.sin(a) * r * 0.55,
+          iw, iw * (sprites[si].height / sprites[si].width), a + Math.PI / 2, 0.78, i % 3 === 0 ? 'lighter' : 'source-over');
+      }
+    }
+  });
+
+  // 27: TRANSIT MAP - moving nodes on a dense metro diagram.
+  modes.push({
+    trains: [],
+    init() { this.trains = Array.from({ length: width < 600 ? 8 : 14 }, (_, i) => ({ line: i % 4, p: Math.random(), speed: 0.0015 + Math.random() * 0.002, si: i % 2 })); },
+    onClick() { this.trains.forEach(t => { t.speed *= 1.8; }); },
+    render(time) {
+      ctx.fillStyle = '#f4f1e8'; ctx.fillRect(0, 0, width, height);
+      const pad = width < 600 ? 34 : 70;
+      const paths = [
+        [[pad,height*.18],[width*.35,height*.18],[width*.62,height*.52],[width-pad,height*.52]],
+        [[width*.18,pad],[width*.18,height*.62],[width*.48,height*.78],[width*.82,height-pad]],
+        [[pad,height*.82],[width*.38,height*.57],[width*.68,height*.57],[width-pad,height*.25]],
+        [[width*.08,height*.42],[width*.42,height*.42],[width*.64,height*.24],[width*.9,height*.72]]
+      ];
+      const colors = ['#e43d30','#1677b8','#00a56a','#f2aa00'];
+      const pointAt = (path, p) => { const n = path.length - 1, pos = Math.min(n - 0.001, p * n), k = Math.floor(pos), q = pos - k; return { x: path[k][0] + (path[k+1][0]-path[k][0])*q, y: path[k][1] + (path[k+1][1]-path[k][1])*q }; };
+      paths.forEach((path, li) => {
+        ctx.strokeStyle = colors[li]; ctx.lineWidth = width < 600 ? 6 : 9; ctx.lineJoin = 'round'; ctx.beginPath();
+        path.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.stroke();
+        path.forEach(p => { ctx.fillStyle = '#f4f1e8'; ctx.strokeStyle = '#1b1b1b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p[0], p[1], 7, 0, Math.PI*2); ctx.fill(); ctx.stroke(); });
+      });
+      this.trains.forEach((t, i) => {
+        t.p = (t.p + t.speed) % 1; t.speed += (0.002 - t.speed) * 0.004;
+        const p = pointAt(paths[t.line], t.p), iw = (width < 600 ? 58 : 78) * getScale();
+        drawSprite(ctx, t.si, false, 0, p.x, p.y, iw, iw * (sprites[t.si].height / sprites[t.si].width), 0, 0.96, 'source-over');
+      });
+    }
+  });
+
+  // 28: BARCODE DRIVE - high-speed monochrome conveyor bands.
+  modes.push({
+    offset: 0, boost: 0,
+    init() { this.offset = 0; this.boost = 0; },
+    onClick() { this.boost = 24; },
+    render(time) {
+      ctx.fillStyle = '#f5f5f2'; ctx.fillRect(0, 0, width, height);
+      this.offset += 2.2 + this.boost; this.boost *= 0.88;
+      let x = -(this.offset % 180);
+      while (x < width + 180) {
+        for (let i = 0; i < 18; i++) { const bw = 2 + ((i * 7) % 9); ctx.fillStyle = i % 5 === 0 ? '#ff3157' : '#111'; ctx.fillRect(x, 0, bw, height); x += bw + 3 + (i % 3); }
+        x += 35;
+      }
+      ctx.fillStyle = 'rgba(245,245,242,0.86)'; ctx.fillRect(0, height * 0.3, width, height * 0.4);
+      ctx.strokeStyle = '#111'; ctx.lineWidth = 4; ctx.strokeRect(-2, height * 0.3, width + 4, height * 0.4);
+      const count = width < 600 ? 3 : 6;
+      for (let i = 0; i < count; i++) {
+        const px = ((time * (0.035 + i * 0.002) + i * width / count) % (width + 160)) - 80;
+        const py = height * (0.39 + (i % 2) * 0.2), si = i % 2, iw = (width < 600 ? 92 : 125) * getScale();
+        drawSprite(ctx, si, i % 3 === 0, time * 0.1 + i * 30, px, py, iw, iw * (sprites[si].height / sprites[si].width), 0, 1, i % 3 === 0 ? 'difference' : 'source-over');
+      }
+    }
+  });
+
+  // 29: STAINED GLASS - luminous leaded window cells.
+  modes.push({
+    bloom: 0,
+    init() { this.bloom = 0; },
+    onClick() { this.bloom = 1; },
+    render(time) {
+      ctx.fillStyle = '#09070b'; ctx.fillRect(0, 0, width, height); this.bloom *= 0.94;
+      const cols = width < 600 ? 4 : 7, rows = width < 600 ? 7 : 5, cw = width / cols, ch = height / rows;
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const x = c*cw, y = r*ch, inset = 5, hue = (c*42 + r*27 + time*0.012) % 360;
+        ctx.fillStyle = `hsla(${hue},78%,${35 + ((c+r)%3)*9}%,${0.72 + this.bloom*0.15})`;
+        ctx.strokeStyle = '#171319'; ctx.lineWidth = width < 600 ? 6 : 8; ctx.beginPath();
+        if ((c+r)%2) { ctx.moveTo(x+cw/2,y+inset); ctx.lineTo(x+cw-inset,y+ch/2); ctx.lineTo(x+cw/2,y+ch-inset); ctx.lineTo(x+inset,y+ch/2); }
+        else { ctx.rect(x+inset,y+inset,cw-inset*2,ch-inset*2); }
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+      }
+      const count = width < 600 ? 6 : 10;
+      for (let i = 0; i < count; i++) {
+        const angle = i/count*Math.PI*2 + time*0.00035, rr = Math.min(width,height)*(0.18 + (i%3)*0.08);
+        const si=i%2, iw=(width<600?68:92)*getScale()*(1+this.bloom*0.18);
+        drawSprite(ctx,si,true,time*0.05+i*36,cx+Math.cos(angle)*rr,cy+Math.sin(angle)*rr,iw,iw*(sprites[si].height/sprites[si].width),angle,0.9,'lighter');
+      }
+      const iw=Math.min(width*.38,170*getScale()); drawSprite(ctx,0,false,0,cx,cy,iw,iw*(sprites[0].height/sprites[0].width),0,1,'source-over');
     }
   });
 
