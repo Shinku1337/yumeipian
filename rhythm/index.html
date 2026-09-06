@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#06060c">
+  <title>愈美节奏 - YMP Rhythm</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game-canvas"></canvas>
+    <div id="touch-controls">
+      <div class="touch-lane" data-lane="0"><span class="key-hint">D</span></div>
+      <div class="touch-lane" data-lane="1"><span class="key-hint">F</span></div>
+      <div class="touch-lane" data-lane="2"><span class="key-hint">J</span></div>
+      <div class="touch-lane" data-lane="3"><span class="key-hint">K</span></div>
+    </div>
+    <div id="hud">
+      <div class="hud-top">
+        <div class="hud-left">
+          <a href="../" class="hud-btn" id="exit-btn" aria-label="返回主站">◀ 主站</a>
+          <div class="song-info">
+            <div id="hud-song-title">愈美幻境</div>
+            <div id="hud-song-bpm">128 BPM</div>
+          </div>
+        </div>
+        <div class="hud-center">
+          <div id="hud-score">0000000</div>
+          <div class="progress-bar-wrap">
+            <div id="progress-bar"></div>
+          </div>
+        </div>
+        <div class="hud-right">
+          <div id="hud-acc">100.0%</div>
+          <button id="pause-btn" class="hud-btn" type="button">⏸</button>
+        </div>
+      </div>
+      <div class="gauge-wrap">
+        <div id="groove-gauge"></div>
+      </div>
+    </div>
+    <div id="start-modal" class="overlay">
+      <div class="modal-card">
+        <div class="modal-logo">
+          <img src="images/YuMeiPian.png" alt="愈美片" class="modal-pill-logo">
+          <div class="modal-title">愈美节奏</div>
+          <div class="modal-sub">YUMEI RHYTHM BEAT</div>
+        </div>
+        <div class="song-selector">
+          <div class="song-card active" data-song="0">
+            <div class="song-badge easy">EASY</div>
+            <div class="song-name">愈美幻境 · Euphoria</div>
+            <div class="song-meta">128 BPM · 4/4 Dance</div>
+          </div>
+          <div class="song-card" data-song="1">
+            <div class="song-badge normal">NORMAL</div>
+            <div class="song-name">速效驱动 · Overdrive</div>
+            <div class="song-meta">150 BPM · Cyber Synthwave</div>
+          </div>
+          <div class="song-card" data-song="2">
+            <div class="song-badge hard">EXPERT</div>
+            <div class="song-name">极限狂想 · Hyper Dose</div>
+            <div class="song-meta">175 BPM · Hardcore Drum&Bass</div>
+          </div>
+        </div>
+        <div class="controls-guide">
+          <div class="guide-pc">电脑按键: <span class="kbd">D</span> <span class="kbd">F</span> <span class="kbd">J</span> <span class="kbd">K</span></div>
+          <div class="guide-mobile">手机触摸: 点击底部 4 个下落轨道区域</div>
+        </div>
+        <div class="modal-actions">
+          <button id="start-btn" class="primary-btn" type="button">开始演奏 / START</button>
+          <a href="../" class="secondary-btn">返回视觉主站</a>
+        </div>
+      </div>
+    </div>
+    <div id="pause-modal" class="overlay" style="display: none;">
+      <div class="modal-card small">
+        <div class="modal-title">已暂停</div>
+        <div class="modal-actions vert">
+          <button id="resume-btn" class="primary-btn" type="button">继续演奏</button>
+          <button id="restart-btn" class="secondary-btn" type="button">重新开始</button>
+          <button id="select-song-btn" class="secondary-btn" type="button">返回曲目选择</button>
+        </div>
+      </div>
+    </div>
+    <div id="result-modal" class="overlay" style="display: none;">
+      <div class="modal-card">
+        <div class="result-header">
+          <div id="result-rank">S</div>
+          <div class="result-title">演奏完成</div>
+        </div>
+        <div class="result-score-box">
+          <div class="res-score-label">FINAL SCORE</div>
+          <div id="result-score">985000</div>
+        </div>
+        <div class="result-stats-grid">
+          <div class="stat-item">
+            <span class="stat-name perfect">PERFECT</span>
+            <span id="stat-perfect" class="stat-val">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name great">GREAT</span>
+            <span id="stat-great" class="stat-val">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name good">GOOD</span>
+            <span id="stat-good" class="stat-val">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name miss">MISS</span>
+            <span id="stat-miss" class="stat-val">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">MAX COMBO</span>
+            <span id="stat-max-combo" class="stat-val">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">ACCURACY</span>
+            <span id="stat-accuracy" class="stat-val">100.0%</span>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="res-retry-btn" class="primary-btn" type="button">再来一次</button>
+          <button id="res-menu-btn" class="secondary-btn" type="button">曲目选择</button>
+          <a href="../" class="secondary-btn">返回主站</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>

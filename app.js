@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const TOTAL_MODES = 30;
+  const TOTAL_MODES = 50;
   const STORAGE_KEY = 'yump_style_idx';
   const HUE_STEPS = 18;
 
@@ -213,9 +213,9 @@
   });
 
   window.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' || e.code === 'ArrowRight' || e.code === 'Enter') {
+    if (e.code === 'Space' || e.code === 'ArrowRight' || e.code === 'ArrowUp' || e.code === 'Enter' || e.code === 'PageDown') {
       switchMode(currentMode + 1);
-    } else if (e.code === 'ArrowLeft') {
+    } else if (e.code === 'ArrowLeft' || e.code === 'ArrowDown' || e.code === 'PageUp') {
       switchMode(currentMode - 1);
     } else if (e.key >= '1' && e.key <= '9') {
       switchMode(parseInt(e.key, 10) - 1);
@@ -1484,7 +1484,6 @@
     }
   });
 
-  // 15: PRISM TEMPLE - mirrored crystalline architecture.
   modes.push({
     shards: [],
     burst: 0,
@@ -1559,7 +1558,6 @@
     }
   });
 
-  // 16: LIQUID SIGNAL - tactile waves and refraction ripples.
   modes.push({
     ripples: [],
     phase: 0,
@@ -1610,7 +1608,6 @@
     }
   });
 
-  // 17: DATA CUBE - a rotating wireframe vault with image nodes.
   modes.push({
     angleX: 0,
     angleY: 0,
@@ -1658,7 +1655,6 @@
     }
   });
 
-  // 18: FREQUENCY DISC - turntable rings driven by synthetic waveforms.
   modes.push({
     spin: 0,
     impact: 0,
@@ -1706,7 +1702,6 @@
     }
   });
 
-  // 19: PRINT RIOT - hard-edged editorial collage and halftone motion.
   modes.push({
     panels: [],
     snap: 0,
@@ -1762,7 +1757,6 @@
     }
   });
 
-  // 20: KALEIDOSCOPE ALTAR - mirrored radial petals.
   modes.push({
     twist: 0, kick: 0,
     init() { this.twist = 0; this.kick = 0; },
@@ -1802,7 +1796,6 @@
     }
   });
 
-  // 21: TOPOGRAPHIC FIELD - animated terrain contours.
   modes.push({
     pulse: 0,
     init() { this.pulse = 0; },
@@ -1836,7 +1829,6 @@
     }
   });
 
-  // 22: NEON PINBALL - bumpers, rails and ricocheting pills.
   modes.push({
     balls: [], bumpers: [],
     init() {
@@ -1871,7 +1863,6 @@
     }
   });
 
-  // 23: FLIP WALL - mechanical split-flap mosaic.
   modes.push({
     tiles: [], flipAll: 0,
     init() {
@@ -1900,7 +1891,6 @@
     }
   });
 
-  // 24: AURORA CURTAIN - layered polar light ribbons.
   modes.push({
     flare: 0, stars: [],
     init() { this.flare = 0; this.stars = Array.from({ length: width < 600 ? 45 : 80 }, () => ({ x: Math.random() * width, y: Math.random() * height * 0.7, a: Math.random(), s: Math.random() * 1.8 })); },
@@ -1936,7 +1926,6 @@
     }
   });
 
-  // 25: CRT OSCILLOSCOPE - phosphor waveforms and scan distortion.
   modes.push({
     shock: 0,
     init() { this.shock = 0; },
@@ -1968,7 +1957,6 @@
     }
   });
 
-  // 26: GRAVITY LENS - orbiting arcs bent around a dark core.
   modes.push({
     mass: 1,
     init() { this.mass = 1; },
@@ -1997,7 +1985,6 @@
     }
   });
 
-  // 27: TRANSIT MAP - moving nodes on a dense metro diagram.
   modes.push({
     trains: [],
     init() { this.trains = Array.from({ length: width < 600 ? 8 : 14 }, (_, i) => ({ line: i % 4, p: Math.random(), speed: 0.0015 + Math.random() * 0.002, si: i % 2 })); },
@@ -2026,7 +2013,6 @@
     }
   });
 
-  // 28: BARCODE DRIVE - high-speed monochrome conveyor bands.
   modes.push({
     offset: 0, boost: 0,
     init() { this.offset = 0; this.boost = 0; },
@@ -2050,7 +2036,6 @@
     }
   });
 
-  // 29: STAINED GLASS - luminous leaded window cells.
   modes.push({
     bloom: 0,
     init() { this.bloom = 0; },
@@ -2073,6 +2058,1274 @@
         drawSprite(ctx,si,true,time*0.05+i*36,cx+Math.cos(angle)*rr,cy+Math.sin(angle)*rr,iw,iw*(sprites[si].height/sprites[si].width),angle,0.9,'lighter');
       }
       const iw=Math.min(width*.38,170*getScale()); drawSprite(ctx,0,false,0,cx,cy,iw,iw*(sprites[0].height/sprites[0].width),0,1,'source-over');
+    }
+  });
+
+
+  modes.push({
+    pills: [], shockwaves: [],
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 8 : 14;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        a: (i / count) * Math.PI * 2,
+        r: (120 + i * 22) * s,
+        speed: (0.018 - i * 0.0008) * (i % 2 === 0 ? 1 : -1),
+        si: i % 2,
+        tilt: 0.35 + (i % 3) * 0.15,
+        isRainbow: i % 2 === 1,
+        hue: (i * 45) % 360,
+        trail: []
+      }));
+      this.shockwaves = [];
+    },
+    onClick() {
+      this.shockwaves.push({ r: 10, maxR: Math.max(width, height) * 0.7, alpha: 1, hue: Math.random() * 360 });
+      this.pills.forEach(p => { p.speed *= 2.2; });
+    },
+    render(time) {
+      ctx.fillStyle = '#020108'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      const jHue = (time * 0.08) % 360;
+      const jetGrad = ctx.createLinearGradient(cx, 0, cx, height);
+      jetGrad.addColorStop(0, `hsla(${jHue}, 100%, 75%, 0.8)`);
+      jetGrad.addColorStop(0.4, `hsla(${(jHue + 60) % 360}, 100%, 60%, 0.2)`);
+      jetGrad.addColorStop(0.5, 'rgba(0,0,0,0)');
+      jetGrad.addColorStop(0.6, `hsla(${(jHue + 120) % 360}, 100%, 60%, 0.2)`);
+      jetGrad.addColorStop(1, `hsla(${(jHue + 180) % 360}, 100%, 75%, 0.8)`);
+      ctx.save();
+      ctx.fillStyle = jetGrad;
+      const jw = (20 + Math.sin(time * 0.008) * 8) * s;
+      ctx.beginPath();
+      ctx.moveTo(cx - jw, 0); ctx.lineTo(cx + jw, 0); ctx.lineTo(cx + 2, cy); ctx.lineTo(cx - 2, cy);
+      ctx.closePath(); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(cx - 2, cy); ctx.lineTo(cx + 2, cy);
+      ctx.lineTo(cx + jw, height); ctx.lineTo(cx - jw, height);
+      ctx.closePath(); ctx.fill();
+      for (let r = 1; r <= 4; r++) {
+        const rad = (80 + r * 55) * s;
+        ctx.strokeStyle = `hsla(${(jHue + r * 50) % 360}, 90%, 65%, 0.35)`;
+        ctx.lineWidth = 2 * s;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rad, rad * 0.38, 0.25, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      for (let i = this.shockwaves.length - 1; i >= 0; i--) {
+        const sw = this.shockwaves[i];
+        sw.r += (sw.maxR - sw.r) * 0.08 + 2;
+        sw.alpha -= 0.02;
+        if (sw.alpha <= 0) { this.shockwaves.splice(i, 1); continue; }
+        ctx.strokeStyle = `hsla(${sw.hue}, 100%, 70%, ${sw.alpha})`;
+        ctx.lineWidth = 4 * s;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, sw.r, sw.r * 0.38, 0.25, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      this.pills.forEach(p => {
+        p.a += p.speed;
+        p.speed += ((p.si === 0 ? 0.012 : -0.012) - p.speed) * 0.02;
+        p.hue = (p.hue + 1.5) % 360;
+        const px = cx + Math.cos(p.a) * p.r;
+        const py = cy + Math.sin(p.a) * p.r * p.tilt;
+        const depth = Math.sin(p.a);
+        const scale = (0.75 + depth * 0.35) * s;
+        const pw = (width < 600 ? 55 : 85) * scale;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        const dopplerHue = (p.hue + (depth > 0 ? 30 : -30) + 360) % 360;
+        p.trail.push({ x: px, y: py, h: dopplerHue, rot: p.a, w: pw, ph: ph });
+        if (p.trail.length > 5) p.trail.shift();
+        for (let t = 0; t < p.trail.length - 1; t++) {
+          const tr = p.trail[t];
+          drawSprite(ctx, p.si, true, tr.h, tr.x, tr.y, tr.w * 0.85, tr.ph * 0.85, tr.rot, (t / p.trail.length) * 0.3, 'lighter');
+        }
+        drawSprite(ctx, p.si, p.isRainbow, dopplerHue, px, py, pw, ph, p.a + Math.PI / 2, 0.95, p.isRainbow ? 'lighter' : 'source-over');
+      });
+      ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(cx, cy, 38 * s, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = `hsla(${jHue}, 100%, 75%, 0.9)`; ctx.lineWidth = 3 * s; ctx.stroke();
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    coreAngle: 0, rods: [], arcs: [], burst: 0,
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 6 : 10;
+      this.rods = Array.from({ length: count }, (_, i) => ({
+        ang: (i / count) * Math.PI * 2,
+        dist: (140 + (i % 2) * 50) * s,
+        rot: 0,
+        si: i % 2,
+        isRainbow: true,
+        hue: (i * 36) % 360
+      }));
+      this.arcs = [];
+      this.burst = 0;
+    },
+    onClick() { this.burst = 1; },
+    render(time) {
+      ctx.fillStyle = '#05070d'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      this.coreAngle += 0.015;
+      this.burst *= 0.92;
+      ctx.save();
+      for (let ring = 1; ring <= 3; ring++) {
+        const rad = (70 + ring * 55) * s * (1 + this.burst * 0.2);
+        const sides = 6;
+        ctx.strokeStyle = `hsla(${(time * 0.05 + ring * 60) % 360}, 90%, 65%, ${0.35 + this.burst * 0.4})`;
+        ctx.lineWidth = 2.5 * s;
+        ctx.beginPath();
+        for (let j = 0; j <= sides; j++) {
+          const a = (j / sides) * Math.PI * 2 + (ring % 2 === 0 ? this.coreAngle : -this.coreAngle * 1.3);
+          const x = cx + Math.cos(a) * rad, y = cy + Math.sin(a) * rad;
+          if (j === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+      this.rods.forEach((r, idx) => {
+        r.ang += 0.012 * (idx % 2 === 0 ? 1 : -1);
+        r.rot += 0.03;
+        r.hue = (r.hue + 1.2) % 360;
+        const rx = cx + Math.cos(r.ang) * r.dist * (1 + this.burst * 0.35);
+        const ry = cy + Math.sin(r.ang) * r.dist * (1 + this.burst * 0.35);
+        const rw = (width < 600 ? 58 : 80) * s;
+        const rh = rw * (sprites[r.si].height / sprites[r.si].width);
+        drawSprite(ctx, r.si, r.isRainbow, r.hue, rx, ry, rw, rh, r.rot, 0.95, 'lighter');
+        if (Math.random() < 0.25 || this.burst > 0.2) {
+          ctx.strokeStyle = `hsla(${r.hue}, 100%, 75%, 0.85)`;
+          ctx.lineWidth = (1.5 + Math.random() * 2) * s;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          const segs = 5;
+          for (let k = 1; k <= segs; k++) {
+            const t = k / segs;
+            const tx = cx + (rx - cx) * t + (Math.random() - 0.5) * 35 * s;
+            const ty = cy + (ry - cy) * t + (Math.random() - 0.5) * 35 * s;
+            ctx.lineTo(tx, ty);
+          }
+          ctx.stroke();
+        }
+      });
+      const coreR = (32 + Math.sin(time * 0.01) * 8 + this.burst * 35) * s;
+      const cGrad = ctx.createRadialGradient(cx, cy, 2, cx, cy, coreR * 1.8);
+      cGrad.addColorStop(0, '#ffffff');
+      cGrad.addColorStop(0.3, `hsla(${(time * 0.1) % 360}, 100%, 65%, 0.9)`);
+      cGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = cGrad;
+      ctx.beginPath(); ctx.arc(cx, cy, coreR * 1.8, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    pills: [], streamlines: [],
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 7 : 12;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        x: cx + (Math.random() - 0.5) * width * 0.7,
+        y: cy + (Math.random() - 0.5) * height * 0.7,
+        vx: 0, vy: 0, ang: 0,
+        si: i % 2,
+        isRainbow: i % 3 !== 0,
+        hue: (i * 40) % 360,
+        trail: []
+      }));
+      this.streamlines = Array.from({ length: width < 600 ? 30 : 60 }, () => ({
+        x: Math.random() * width, y: Math.random() * height,
+        life: Math.random() * 100, maxLife: 60 + Math.random() * 60,
+        hue: Math.random() * 360
+      }));
+    },
+    onClick(x, y) {
+      this.pills.forEach(p => {
+        const dx = p.x - x, dy = p.y - y, d = Math.hypot(dx, dy) || 1;
+        p.vx += (dx / d) * 14; p.vy += (dy / d) * 14;
+      });
+    },
+    render(time) {
+      ctx.fillStyle = 'rgba(4, 8, 16, 0.28)'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      const v1x = cx + Math.cos(time * 0.0012) * width * 0.22;
+      const v1y = cy + Math.sin(time * 0.0016) * height * 0.22;
+      const v2x = cx + Math.cos(time * 0.0014 + Math.PI) * width * 0.22;
+      const v2y = cy + Math.sin(time * 0.0011 + Math.PI) * height * 0.22;
+      function getVelocity(px, py) {
+        let vx = 0, vy = 0;
+        const dx1 = px - v1x, dy1 = py - v1y, d1sq = dx1 * dx1 + dy1 * dy1 + 400;
+        vx += -dy1 / d1sq * 1800; vy += dx1 / d1sq * 1800;
+        const dx2 = px - v2x, dy2 = py - v2y, d2sq = dx2 * dx2 + dy2 * dy2 + 400;
+        vx += dy2 / d2sq * 1800; vy += -dx2 / d2sq * 1800;
+        if (mouse.active) {
+          const dmx = px - mouse.x, dmy = py - mouse.y, dmsq = dmx * dmx + dmy * dmy + 600;
+          vx += -dmy / dmsq * 2500; vy += dmx / dmsq * 2500;
+        }
+        return { vx, vy };
+      }
+      ctx.save();
+      this.streamlines.forEach(sl => {
+        const v = getVelocity(sl.x, sl.y);
+        const nx = sl.x + v.vx * 0.6, ny = sl.y + v.vy * 0.6;
+        ctx.strokeStyle = `hsla(${sl.hue}, 90%, 65%, ${Math.sin(sl.life / sl.maxLife * Math.PI) * 0.45})`;
+        ctx.lineWidth = 1.8 * s;
+        ctx.beginPath(); ctx.moveTo(sl.x, sl.y); ctx.lineTo(nx, ny); ctx.stroke();
+        sl.x = nx; sl.y = ny; sl.life++;
+        if (sl.life >= sl.maxLife || sl.x < 0 || sl.x > width || sl.y < 0 || sl.y > height) {
+          sl.x = Math.random() * width; sl.y = Math.random() * height;
+          sl.life = 0; sl.hue = (time * 0.05 + Math.random() * 60) % 360;
+        }
+      });
+      this.pills.forEach(p => {
+        const v = getVelocity(p.x, p.y);
+        p.vx = p.vx * 0.9 + v.vx * 0.12;
+        p.vy = p.vy * 0.9 + v.vy * 0.12;
+        p.x += p.vx; p.y += p.vy;
+        p.ang = Math.atan2(p.vy, p.vx);
+        p.hue = (p.hue + 1.6) % 360;
+        if (p.x < -60) p.x = width + 50; if (p.x > width + 60) p.x = -50;
+        if (p.y < -60) p.y = height + 50; if (p.y > height + 60) p.y = -50;
+        p.trail.push({ x: p.x, y: p.y, ang: p.ang, h: p.hue });
+        if (p.trail.length > 6) p.trail.shift();
+        const pw = (width < 600 ? 56 : 82) * s;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        for (let t = 0; t < p.trail.length - 1; t++) {
+          const tr = p.trail[t];
+          drawSprite(ctx, p.si, true, tr.h, tr.x, tr.y, pw * 0.8, ph * 0.8, tr.ang, (t / p.trail.length) * 0.28, 'lighter');
+        }
+        drawSprite(ctx, p.si, p.isRainbow, p.hue, p.x, p.y, pw, ph, p.ang, 0.95, p.isRainbow ? 'lighter' : 'source-over');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    burst: 0,
+    init() { this.burst = 0; },
+    onClick() { this.burst = 1; },
+    render(time) {
+      ctx.fillStyle = '#030206'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      this.burst *= 0.93;
+      const count = width < 600 ? 36 : 64;
+      const phi = 137.5077 * (Math.PI / 180);
+      const baseSpacing = (width < 600 ? 18 : 28) * s * (1 + Math.sin(time * 0.0015) * 0.18 + this.burst * 0.5);
+      const rot = time * 0.0004;
+      ctx.save();
+      for (let i = count - 1; i >= 0; i--) {
+        const theta = i * phi + rot;
+        const r = Math.sqrt(i) * baseSpacing;
+        const px = cx + Math.cos(theta) * r;
+        const py = cy + Math.sin(theta) * r;
+        const si = i % 2;
+        const isRainbow = i % 2 === 0;
+        const hue = (i * 9 + time * 0.08) % 360;
+        const pScale = (0.45 + (1 - i / count) * 0.6) * s * (1 + this.burst * 0.25);
+        const pw = (width < 600 ? 52 : 74) * pScale;
+        const ph = pw * (sprites[si].height / sprites[si].width);
+        drawSprite(ctx, si, isRainbow, hue, px, py, pw, ph, theta + Math.PI / 2, 0.88, 'lighter');
+      }
+      const centerR = (30 + Math.sin(time * 0.005) * 8) * s;
+      const cGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, centerR * 2);
+      cGrad.addColorStop(0, `hsla(${(time * 0.1) % 360}, 100%, 75%, 0.95)`);
+      cGrad.addColorStop(0.5, `hsla(${(time * 0.1 + 60) % 360}, 100%, 60%, 0.4)`);
+      cGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = cGrad;
+      ctx.beginPath(); ctx.arc(cx, cy, centerR * 2, 0, Math.PI * 2); ctx.fill();
+      drawSprite(ctx, 0, false, 0, cx, cy, 75 * s, 75 * s * (sprites[0].height / sprites[0].width), -rot * 2, 1, 'source-over');
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    pills: [], f1: 3, f2: 4, f3: 5,
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 5 : 9;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        tOffset: (i / count) * Math.PI * 2,
+        si: i % 2,
+        isRainbow: i % 2 === 1,
+        hue: (i * 40) % 360
+      }));
+    },
+    onClick() {
+      this.f1 = 2 + Math.floor(Math.random() * 4);
+      this.f2 = 3 + Math.floor(Math.random() * 4);
+      this.f3 = 4 + Math.floor(Math.random() * 3);
+    },
+    render(time) {
+      ctx.fillStyle = 'rgba(2, 4, 10, 0.22)'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      const R = Math.min(width, height) * 0.42;
+      const t = time * 0.001;
+      ctx.save();
+      ctx.lineWidth = 2 * s;
+      ctx.beginPath();
+      const steps = 300;
+      for (let i = 0; i <= steps; i++) {
+        const u = (i / steps) * Math.PI * 2;
+        const x = cx + (Math.sin(u * this.f1 + t) * 0.55 + Math.sin(u * this.f2 + t * 0.7) * 0.45) * R;
+        const y = cy + (Math.cos(u * this.f2 + t * 0.8) * 0.55 + Math.cos(u * this.f3 + t * 1.1) * 0.45) * R;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = `hsla(${(time * 0.06) % 360}, 95%, 65%, 0.45)`;
+      ctx.stroke();
+      this.pills.forEach((p, idx) => {
+        const u = t * 1.5 + p.tOffset;
+        const x = cx + (Math.sin(u * this.f1 + t) * 0.55 + Math.sin(u * this.f2 + t * 0.7) * 0.45) * R;
+        const y = cy + (Math.cos(u * this.f2 + t * 0.8) * 0.55 + Math.cos(u * this.f3 + t * 1.1) * 0.45) * R;
+        const u2 = u + 0.05;
+        const x2 = cx + (Math.sin(u2 * this.f1 + t) * 0.55 + Math.sin(u2 * this.f2 + t * 0.7) * 0.45) * R;
+        const y2 = cy + (Math.cos(u2 * this.f2 + t * 0.8) * 0.55 + Math.cos(u2 * this.f3 + t * 1.1) * 0.45) * R;
+        const ang = Math.atan2(y2 - y, x2 - x);
+        const pw = (width < 600 ? 58 : 84) * s;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        p.hue = (p.hue + 1.8) % 360;
+        ctx.strokeStyle = `hsla(${p.hue}, 100%, 75%, 0.6)`;
+        ctx.lineWidth = 1.5 * s;
+        ctx.beginPath();
+        ctx.moveTo(x - 30 * s, y); ctx.lineTo(x + 30 * s, y);
+        ctx.moveTo(x, y - 30 * s); ctx.lineTo(x, y + 30 * s);
+        ctx.stroke();
+        drawSprite(ctx, p.si, p.isRainbow, p.hue, x, y, pw, ph, ang, 0.95, p.isRainbow ? 'lighter' : 'source-over');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    cols: 0, rows: 0, grid: [], pills: [],
+    init() {
+      const s = getScale();
+      this.cols = width < 600 ? 8 : 14;
+      this.rows = width < 600 ? 12 : 10;
+      this.grid = Array.from({ length: this.cols * this.rows }, () => ({ z: 0, vz: 0 }));
+      const pCount = width < 600 ? 6 : 12;
+      this.pills = Array.from({ length: pCount }, (_, i) => ({
+        c: 1 + Math.floor(Math.random() * (this.cols - 2)),
+        r: 1 + Math.floor(Math.random() * (this.rows - 2)),
+        si: i % 2,
+        isRainbow: true,
+        hue: (i * 30) % 360
+      }));
+    },
+    onClick(x, y) {
+      const col = Math.floor((x / width) * this.cols);
+      const row = Math.floor((y / height) * this.rows);
+      if (col >= 0 && col < this.cols && row >= 0 && row < this.rows) {
+        this.grid[row * this.cols + col].vz = 25;
+      }
+    },
+    render(time) {
+      ctx.fillStyle = '#05040a'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      const cw = width / (this.cols - 1), ch = height / (this.rows - 1);
+      if (mouse.active) {
+        const mc = Math.floor((mouse.x / width) * this.cols);
+        const mr = Math.floor((mouse.y / height) * this.rows);
+        if (mc >= 0 && mc < this.cols && mr >= 0 && mr < this.rows) {
+          this.grid[mr * this.cols + mc].vz += 3;
+        }
+      }
+      for (let r = 1; r < this.rows - 1; r++) {
+        for (let c = 1; c < this.cols - 1; c++) {
+          const idx = r * this.cols + c;
+          const force = (
+            this.grid[idx - 1].z + this.grid[idx + 1].z +
+            this.grid[idx - this.cols].z + this.grid[idx + this.cols].z
+          ) * 0.25 - this.grid[idx].z;
+          this.grid[idx].vz += force * 0.35;
+          this.grid[idx].vz *= 0.92;
+          this.grid[idx].z += this.grid[idx].vz;
+        }
+      }
+      ctx.save();
+      for (let r = 0; r < this.rows; r++) {
+        ctx.beginPath();
+        for (let c = 0; c < this.cols; c++) {
+          const idx = r * this.cols + c;
+          const px = c * cw, py = r * ch + this.grid[idx].z * 1.5;
+          if (c === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        const gHue = (time * 0.05 + r * 15) % 360;
+        ctx.strokeStyle = `hsla(${gHue}, 85%, 60%, 0.4)`;
+        ctx.lineWidth = 1.5 * s;
+        ctx.stroke();
+      }
+      for (let c = 0; c < this.cols; c++) {
+        ctx.beginPath();
+        for (let r = 0; r < this.rows; r++) {
+          const idx = r * this.cols + c;
+          const px = c * cw, py = r * ch + this.grid[idx].z * 1.5;
+          if (r === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        const gHue = (time * 0.05 + c * 15) % 360;
+        ctx.strokeStyle = `hsla(${gHue}, 85%, 60%, 0.4)`;
+        ctx.lineWidth = 1.5 * s;
+        ctx.stroke();
+      }
+      this.pills.forEach(p => {
+        const idx = p.r * this.cols + p.c;
+        const node = this.grid[idx];
+        const px = p.c * cw, py = p.r * ch + node.z * 1.5;
+        p.hue = (p.hue + 1.4) % 360;
+        const pw = (width < 600 ? 54 : 78) * s * (1 + Math.abs(node.z) * 0.02);
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        drawSprite(ctx, p.si, p.isRainbow, p.hue, px, py, pw, ph, node.z * 0.04, 0.95, 'lighter');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    cars: [], buildings: [], boost: 0,
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 5 : 8;
+      this.cars = Array.from({ length: count }, (_, i) => ({
+        lane: (i % 4) - 1.5,
+        z: (i / count) * 800,
+        speed: 4 + Math.random() * 3,
+        si: i % 2,
+        isRainbow: i % 2 === 1,
+        hue: (i * 45) % 360
+      }));
+      this.buildings = Array.from({ length: 16 }, (_, i) => ({
+        side: i % 2 === 0 ? -1 : 1,
+        z: (i / 16) * 1200,
+        w: 60 + Math.random() * 80,
+        h: 150 + Math.random() * 250,
+        hue: (i * 22) % 360
+      }));
+      this.boost = 0;
+    },
+    onClick() { this.boost = 25; },
+    render(time) {
+      ctx.fillStyle = '#060112'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      this.boost *= 0.92;
+      const horizon = height * 0.45;
+      const fov = 350;
+      const sunR = Math.min(width, height) * 0.22;
+      const sGrad = ctx.createLinearGradient(cx, horizon - sunR, cx, horizon);
+      sGrad.addColorStop(0, '#ffe600'); sGrad.addColorStop(0.5, '#ff007f'); sGrad.addColorStop(1, '#9900ff');
+      ctx.save();
+      ctx.fillStyle = sGrad; ctx.beginPath(); ctx.arc(cx, horizon, sunR, Math.PI, 0); ctx.fill();
+      for (let sl = 1; sl <= 6; sl++) {
+        const sy = horizon - (sl / 7) * sunR;
+        ctx.fillStyle = '#060112'; ctx.fillRect(cx - sunR, sy, sunR * 2, (sl * 1.8) * s);
+      }
+      ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 1.5 * s;
+      const lanes = [-2.5, -1.5, -0.5, 0.5, 1.5, 2.5];
+      lanes.forEach(l => {
+        ctx.beginPath(); ctx.moveTo(cx + l * 40 * s, horizon);
+        ctx.lineTo(cx + l * width * 0.6, height); ctx.stroke();
+      });
+      const gz = (time * (0.3 + this.boost * 0.05)) % 60;
+      for (let z = 600; z > 30; z -= 30) {
+        const realZ = z - gz; if (realZ <= 0) continue;
+        const y = horizon + (fov / realZ) * (height * 0.4);
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y);
+        ctx.strokeStyle = `hsla(${(time * 0.04 + z) % 360}, 80%, 60%, ${Math.min(1, 400 / realZ) * 0.45})`;
+        ctx.stroke();
+      }
+      this.buildings.forEach(b => {
+        b.z -= 4 + this.boost * 0.4; if (b.z < 20) b.z += 1200;
+        const scale = fov / b.z;
+        const bx = cx + b.side * (width * 0.4 + b.w * scale * 0.5);
+        const by = horizon;
+        const bw = b.w * scale, bh = b.h * scale;
+        ctx.strokeStyle = `hsla(${b.hue}, 80%, 65%, ${Math.min(1, 500 / b.z) * 0.6})`;
+        ctx.lineWidth = 1.5 * s;
+        ctx.strokeRect(bx - bw / 2, by - bh, bw, bh);
+      });
+      this.cars.sort((a, b) => b.z - a.z);
+      this.cars.forEach(c => {
+        c.z -= c.speed + this.boost * 0.3; if (c.z < 30) c.z += 800;
+        const scale = fov / c.z;
+        const px = cx + c.lane * (85 * scale) * s;
+        const py = horizon + (fov / c.z) * (height * 0.38);
+        const pw = (width < 600 ? 60 : 90) * scale * s;
+        const ph = pw * (sprites[c.si].height / sprites[c.si].width);
+        c.hue = (c.hue + 1.8) % 360;
+        drawSprite(ctx, c.si, c.isRainbow, c.hue, px, py, pw, ph, 0, Math.min(1, 600 / c.z), c.isRainbow ? 'lighter' : 'source-over');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    shards: [], pills: [], riftPhase: 0,
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 7 : 12;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        z: Math.random() * 600 + 50,
+        vx: (Math.random() - 0.5) * 4,
+        vy: (Math.random() - 0.5) * 4,
+        rot: Math.random() * Math.PI * 2,
+        rotV: (Math.random() - 0.5) * 0.08,
+        si: i % 2,
+        isRainbow: true,
+        hue: (i * 35) % 360
+      }));
+      this.shards = [];
+    },
+    onClick(x, y) {
+      const s = getScale();
+      for (let i = 0; i < 20; i++) {
+        const ang = Math.random() * Math.PI * 2, spd = 3 + Math.random() * 8;
+        this.shards.push({
+          x: cx, y: cy, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
+          rot: Math.random() * Math.PI * 2, rotV: (Math.random() - 0.5) * 0.2,
+          size: (10 + Math.random() * 20) * s, alpha: 1, hue: Math.random() * 360
+        });
+      }
+    },
+    render(time) {
+      ctx.fillStyle = '#040108'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      this.riftPhase += 0.025;
+      ctx.save();
+      ctx.beginPath();
+      const riftH = height * 0.45;
+      const points = 14;
+      for (let i = 0; i <= points; i++) {
+        const t = i / points;
+        const ry = cy - riftH / 2 + t * riftH;
+        const rx = cx + Math.sin(t * 12 + this.riftPhase) * 22 * s + ((i % 2 === 0 ? 1 : -1) * 12 * s);
+        if (i === 0) ctx.moveTo(rx, ry); else ctx.lineTo(rx, ry);
+      }
+      ctx.strokeStyle = `hsla(${(time * 0.1) % 360}, 100%, 75%, 0.9)`;
+      ctx.lineWidth = 4 * s; ctx.stroke();
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5 * s; ctx.stroke();
+      for (let i = this.shards.length - 1; i >= 0; i--) {
+        const sh = this.shards[i];
+        sh.x += sh.vx; sh.y += sh.vy; sh.rot += sh.rotV; sh.alpha -= 0.02;
+        if (sh.alpha <= 0) { this.shards.splice(i, 1); continue; }
+        ctx.save();
+        ctx.globalAlpha = sh.alpha;
+        ctx.fillStyle = `hsla(${sh.hue}, 95%, 65%, 0.7)`;
+        ctx.translate(sh.x, sh.y); ctx.rotate(sh.rot);
+        ctx.beginPath();
+        ctx.moveTo(-sh.size / 2, -sh.size / 2); ctx.lineTo(sh.size / 2, 0); ctx.lineTo(0, sh.size / 2);
+        ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
+      this.pills.forEach(p => {
+        p.z -= 5;
+        p.rot += p.rotV;
+        p.hue = (p.hue + 1.8) % 360;
+        if (p.z <= 20) {
+          p.z = 600;
+          p.vx = (Math.random() - 0.5) * 6;
+          p.vy = (Math.random() - 0.5) * 6;
+        }
+        const fov = 260;
+        const scale = fov / p.z;
+        const px = cx + p.vx * (600 - p.z) * 0.35 * s;
+        const py = cy + p.vy * (600 - p.z) * 0.35 * s;
+        const pw = (width < 600 ? 55 : 85) * scale * s;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        drawSprite(ctx, p.si, p.isRainbow, p.hue, px, py, pw, ph, p.rot, Math.min(1, scale), 'lighter');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    coils: [], pills: [], discharge: 0,
+    init() {
+      const s = getScale();
+      this.coils = [
+        { x: 40 * s, y: 40 * s }, { x: width - 40 * s, y: 40 * s },
+        { x: 40 * s, y: height - 40 * s }, { x: width - 40 * s, y: height - 40 * s }
+      ];
+      const count = width < 600 ? 6 : 10;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        x: cx + (Math.random() - 0.5) * width * 0.6,
+        y: cy + (Math.random() - 0.5) * height * 0.6,
+        vx: (Math.random() - 0.5) * 2,
+        vy: (Math.random() - 0.5) * 2,
+        si: i % 2,
+        isRainbow: true,
+        hue: (i * 36) % 360,
+        charge: 0
+      }));
+      this.discharge = 0;
+    },
+    onClick() { this.discharge = 1; },
+    render(time) {
+      ctx.fillStyle = '#03050c'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      this.discharge *= 0.92;
+      this.coils = [
+        { x: 50 * s, y: 50 * s }, { x: width - 50 * s, y: 50 * s },
+        { x: 50 * s, y: height - 50 * s }, { x: width - 50 * s, y: height - 50 * s }
+      ];
+      function drawLightning(x1, y1, x2, y2, hue, widthScale) {
+        ctx.strokeStyle = `hsla(${hue}, 100%, 75%, 0.85)`;
+        ctx.lineWidth = widthScale;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        const d = Math.hypot(x2 - x1, y2 - y1);
+        const steps = Math.max(4, Math.floor(d / (35 * s)));
+        for (let i = 1; i < steps; i++) {
+          const t = i / steps;
+          const mx = x1 + (x2 - x1) * t + (Math.random() - 0.5) * 45 * s;
+          const my = y1 + (y2 - y1) * t + (Math.random() - 0.5) * 45 * s;
+          ctx.lineTo(mx, my);
+        }
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+      ctx.save();
+      this.coils.forEach((c, idx) => {
+        const cGrad = ctx.createRadialGradient(c.x, c.y, 2, c.x, c.y, 35 * s);
+        cGrad.addColorStop(0, '#ffffff');
+        cGrad.addColorStop(0.4, `hsla(${(time * 0.1 + idx * 90) % 360}, 100%, 65%, 0.8)`);
+        cGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = cGrad;
+        ctx.beginPath(); ctx.arc(c.x, c.y, 35 * s, 0, Math.PI * 2); ctx.fill();
+        if (Math.random() < 0.4 || this.discharge > 0.2) {
+          const target = this.pills[Math.floor(Math.random() * this.pills.length)];
+          if (target) {
+            drawLightning(c.x, c.y, target.x, target.y, (time * 0.1) % 360, (2 + Math.random() * 2) * s);
+            target.charge = 1;
+          }
+        }
+      });
+      this.pills.forEach((p, i) => {
+        p.x += p.vx; p.y += p.vy;
+        p.charge *= 0.94;
+        p.hue = (p.hue + 1.6) % 360;
+        if (p.x < 60) { p.x = 60; p.vx *= -1; } if (p.x > width - 60) { p.x = width - 60; p.vx *= -1; }
+        if (p.y < 60) { p.y = 60; p.vy *= -1; } if (p.y > height - 60) { p.y = height - 60; p.vy *= -1; }
+        const pw = (width < 600 ? 58 : 82) * s * (1 + p.charge * 0.25);
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        drawSprite(ctx, p.si, p.isRainbow, p.hue, p.x, p.y, pw, ph, 0, 0.95, 'lighter');
+        for (let j = i + 1; j < this.pills.length; j++) {
+          const p2 = this.pills[j];
+          const dist = Math.hypot(p2.x - p.x, p2.y - p.y);
+          if (dist < 180 * s && (Math.random() < 0.18 || this.discharge > 0.3)) {
+            drawLightning(p.x, p.y, p2.x, p2.y, p.hue, (1.5 + Math.random()) * s);
+          }
+        }
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    gears: [], pills: [], rotSpeed: 1,
+    init() {
+      const s = getScale();
+      this.gears = [
+        { r: 70 * s, teeth: 12, ratio: 1, color: '#ffd700' },
+        { r: 130 * s, teeth: 20, ratio: -0.6, color: '#00f0ff' },
+        { r: 210 * s, teeth: 32, ratio: 0.375, color: '#ff007f' },
+        { r: 310 * s, teeth: 48, ratio: -0.25, color: '#00ff66' }
+      ];
+      const count = width < 600 ? 6 : 10;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        gIdx: i % this.gears.length,
+        angOffset: (i / count) * Math.PI * 2,
+        si: i % 2,
+        isRainbow: true,
+        hue: (i * 36) % 360
+      }));
+      this.rotSpeed = 1;
+    },
+    onClick() { this.rotSpeed = this.rotSpeed > 0 ? -2.5 : 2.5; },
+    render(time) {
+      ctx.fillStyle = '#080608'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      this.rotSpeed += (1 - this.rotSpeed) * 0.03;
+      ctx.save();
+      this.gears.forEach((g) => {
+        const ang = time * 0.001 * g.ratio * this.rotSpeed;
+        ctx.strokeStyle = g.color; ctx.lineWidth = 2 * s;
+        ctx.beginPath(); ctx.arc(cx, cy, g.r, 0, Math.PI * 2); ctx.stroke();
+        for (let i = 0; i < g.teeth; i++) {
+          const ta = ang + (i / g.teeth) * Math.PI * 2;
+          const tr1 = g.r - 6 * s, tr2 = g.r + 6 * s;
+          ctx.beginPath();
+          ctx.moveTo(cx + Math.cos(ta) * tr1, cy + Math.sin(ta) * tr1);
+          ctx.lineTo(cx + Math.cos(ta) * tr2, cy + Math.sin(ta) * tr2);
+          ctx.stroke();
+        }
+      });
+      this.pills.forEach(p => {
+        const g = this.gears[p.gIdx];
+        const a = time * 0.001 * g.ratio * this.rotSpeed + p.angOffset;
+        const px = cx + Math.cos(a) * g.r;
+        const py = cy + Math.sin(a) * g.r;
+        p.hue = (p.hue + 1.2) % 360;
+        const pw = (width < 600 ? 52 : 75) * s;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        drawSprite(ctx, p.si, p.isRainbow, p.hue, px, py, pw, ph, a + Math.PI / 2, 0.95, 'lighter');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    ribbons: 5, pills: [], bassPulse: 0,
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 5 : 9;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        track: i % 5,
+        p: i / count,
+        speed: 0.003 + Math.random() * 0.002,
+        si: i % 2,
+        isRainbow: true,
+        hue: (i * 40) % 360
+      }));
+      this.bassPulse = 0;
+    },
+    onClick() { this.bassPulse = 1; },
+    render(time) {
+      ctx.fillStyle = '#020308'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      this.bassPulse *= 0.92;
+      const rH = height / (this.ribbons + 1);
+      ctx.save();
+      for (let r = 0; r < this.ribbons; r++) {
+        const baseY = (r + 1) * rH;
+        const rHue = (time * 0.06 + r * 50) % 360;
+        ctx.strokeStyle = `hsla(${rHue}, 90%, 65%, 0.6)`;
+        ctx.lineWidth = 3 * s;
+        ctx.beginPath();
+        const steps = 60;
+        for (let i = 0; i <= steps; i++) {
+          const x = (i / steps) * width;
+          const y = baseY + Math.sin(x * 0.008 + time * 0.003 + r * 1.5) * (35 + this.bassPulse * 45) * s;
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+      this.pills.forEach(p => {
+        p.p = (p.p + p.speed) % 1;
+        p.hue = (p.hue + 1.8) % 360;
+        const px = p.p * width;
+        const baseY = (p.track + 1) * rH;
+        const py = baseY + Math.sin(px * 0.008 + time * 0.003 + p.track * 1.5) * (35 + this.bassPulse * 45) * s;
+        const dx = 1;
+        const dy = Math.cos(px * 0.008 + time * 0.003 + p.track * 1.5) * 0.008 * (35 + this.bassPulse * 45) * s;
+        const ang = Math.atan2(dy, dx);
+        const pw = (width < 600 ? 56 : 82) * s;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        drawSprite(ctx, p.si, p.isRainbow, p.hue, px, py, pw, ph, ang, 0.95, 'lighter');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    pills: [], flares: [],
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 8 : 14;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        t: Math.random(),
+        speed: 0.002 + Math.random() * 0.002,
+        loopIdx: i % 4,
+        si: i % 2,
+        isRainbow: true,
+        hue: (i * 30) % 360
+      }));
+      this.flares = [];
+    },
+    onClick() {
+      const s = getScale();
+      for (let i = 0; i < 15; i++) {
+        this.flares.push({
+          x: cx + (Math.random() - 0.5) * 200 * s,
+          y: height * 0.9,
+          vx: (Math.random() - 0.5) * 6,
+          vy: -4 - Math.random() * 8,
+          size: (6 + Math.random() * 12) * s,
+          alpha: 1,
+          hue: (Math.random() * 60 + 10) % 360
+        });
+      }
+    },
+    render(time) {
+      ctx.fillStyle = '#060202'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      const sunCenterY = height * 1.15;
+      const sunR = height * 0.45;
+      const sGrad = ctx.createRadialGradient(cx, sunCenterY, sunR * 0.4, cx, sunCenterY, sunR);
+      sGrad.addColorStop(0, '#ffffff'); sGrad.addColorStop(0.3, '#ffcc00'); sGrad.addColorStop(0.8, '#ff3300'); sGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.save();
+      ctx.fillStyle = sGrad; ctx.beginPath(); ctx.arc(cx, sunCenterY, sunR, 0, Math.PI * 2); ctx.fill();
+      const loops = [
+        { x: cx - width * 0.25, w: width * 0.25, h: height * 0.35 },
+        { x: cx, w: width * 0.35, h: height * 0.45 },
+        { x: cx + width * 0.25, w: width * 0.25, h: height * 0.35 },
+        { x: cx, w: width * 0.55, h: height * 0.55 }
+      ];
+      loops.forEach((lp, idx) => {
+        ctx.strokeStyle = `hsla(${(time * 0.05 + idx * 40) % 360}, 100%, 65%, 0.5)`;
+        ctx.lineWidth = 2.5 * s;
+        ctx.beginPath();
+        for (let a = 0; a <= Math.PI; a += 0.05) {
+          const lx = lp.x + Math.cos(a) * (lp.w / 2);
+          const ly = height * 0.88 - Math.sin(a) * lp.h;
+          if (a === 0) ctx.moveTo(lx, ly); else ctx.lineTo(lx, ly);
+        }
+        ctx.stroke();
+      });
+      for (let i = this.flares.length - 1; i >= 0; i--) {
+        const fl = this.flares[i];
+        fl.x += fl.vx; fl.y += fl.vy; fl.vy += 0.15; fl.alpha -= 0.02;
+        if (fl.alpha <= 0) { this.flares.splice(i, 1); continue; }
+        ctx.fillStyle = `hsla(${fl.hue}, 100%, 70%, ${fl.alpha})`;
+        ctx.beginPath(); ctx.arc(fl.x, fl.y, fl.size, 0, Math.PI * 2); ctx.fill();
+      }
+      this.pills.forEach(p => {
+        p.t = (p.t + p.speed) % 1;
+        p.hue = (p.hue + 1.8) % 360;
+        const lp = loops[p.loopIdx];
+        const a = p.t * Math.PI;
+        const px = lp.x + Math.cos(a) * (lp.w / 2);
+        const py = height * 0.88 - Math.sin(a) * lp.h;
+        const pw = (width < 600 ? 54 : 78) * s;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        drawSprite(ctx, p.si, p.isRainbow, p.hue, px, py, pw, ph, a, 0.95, 'lighter');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    nodes: [], rotX: 0, rotY: 0,
+    init() {
+      const coords = [
+        [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
+        [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1],
+        [0, 0, -1.4], [0, 0, 1.4], [0, -1.4, 0], [0, 1.4, 0], [-1.4, 0, 0], [1.4, 0, 0]
+      ];
+      this.nodes = coords.map((c, i) => ({
+        x: c[0], y: c[1], z: c[2],
+        si: i % 2,
+        isRainbow: true,
+        hue: (i * 25) % 360
+      }));
+      this.rotX = 0; this.rotY = 0;
+    },
+    onClick() { this.rotX += 0.5; this.rotY += 0.5; },
+    render(time) {
+      ctx.fillStyle = '#020509'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      this.rotX += 0.008; this.rotY += 0.012;
+      const size = Math.min(width, height) * 0.28;
+      const cosX = Math.cos(this.rotX), sinX = Math.sin(this.rotX);
+      const cosY = Math.cos(this.rotY), sinY = Math.sin(this.rotY);
+      const proj = this.nodes.map(n => {
+        let y1 = n.y * cosX - n.z * sinX, z1 = n.y * sinX + n.z * cosX;
+        let x2 = n.x * cosY + z1 * sinY, z2 = -n.x * sinY + z1 * cosY;
+        const fov = 3.5;
+        const scale = fov / (fov + z2);
+        return {
+          px: cx + x2 * size * scale,
+          py: cy + y1 * size * scale,
+          scale: scale,
+          z: z2,
+          si: n.si,
+          hue: n.hue
+        };
+      });
+      ctx.save();
+      for (let i = 0; i < proj.length; i++) {
+        for (let j = i + 1; j < proj.length; j++) {
+          const d = Math.hypot(this.nodes[i].x - this.nodes[j].x, this.nodes[i].y - this.nodes[j].y, this.nodes[i].z - this.nodes[j].z);
+          if (d < 2.1) {
+            ctx.strokeStyle = `hsla(${(time * 0.05 + i * 20) % 360}, 90%, 65%, 0.4)`;
+            ctx.lineWidth = 1.8 * s;
+            ctx.beginPath();
+            ctx.moveTo(proj[i].px, proj[i].py);
+            ctx.lineTo(proj[j].px, proj[j].py);
+            ctx.stroke();
+          }
+        }
+      }
+      proj.sort((a, b) => b.z - a.z);
+      proj.forEach(p => {
+        const pw = (width < 600 ? 52 : 76) * s * p.scale;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        drawSprite(ctx, p.si, true, p.hue + time * 0.05, p.px, p.py, pw, ph, 0, 0.95, 'lighter');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    suns: [], pills: [],
+    init() {
+      const s = getScale();
+      this.suns = [
+        { x: cx - 120 * s, y: cy - 70 * s, vx: 0.8, vy: -0.6, m: 3500, color: '#ff007f' },
+        { x: cx + 120 * s, y: cy - 70 * s, vx: -0.5, vy: 0.9, m: 3500, color: '#00f0ff' },
+        { x: cx, y: cy + 130 * s, vx: -0.3, vy: -0.3, m: 3500, color: '#ffd700' }
+      ];
+      const count = width < 600 ? 8 : 14;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        x: cx + (Math.random() - 0.5) * 300 * s,
+        y: cy + (Math.random() - 0.5) * 300 * s,
+        vx: (Math.random() - 0.5) * 4,
+        vy: (Math.random() - 0.5) * 4,
+        si: i % 2,
+        isRainbow: true,
+        hue: (i * 36) % 360,
+        trail: []
+      }));
+    },
+    onClick() {
+      this.pills.forEach(p => {
+        p.vx += (Math.random() - 0.5) * 8; p.vy += (Math.random() - 0.5) * 8;
+      });
+    },
+    render(time) {
+      ctx.fillStyle = 'rgba(2, 2, 6, 0.25)'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      for (let i = 0; i < 3; i++) {
+        for (let j = i + 1; j < 3; j++) {
+          const s1 = this.suns[i], s2 = this.suns[j];
+          const dx = s2.x - s1.x, dy = s2.y - s1.y, d = Math.hypot(dx, dy) || 1;
+          const f = (s1.m * s2.m) / (d * d + 8000) * 0.0001;
+          s1.vx += (dx / d) * f; s1.vy += (dy / d) * f;
+          s2.vx -= (dx / d) * f; s2.vy -= (dy / d) * f;
+        }
+      }
+      this.suns.forEach(sn => {
+        sn.vx += (cx - sn.x) * 0.0002; sn.vy += (cy - sn.y) * 0.0002;
+        sn.x += sn.vx; sn.y += sn.vy;
+        ctx.fillStyle = sn.color; ctx.shadowColor = sn.color; ctx.shadowBlur = 18;
+        ctx.beginPath(); ctx.arc(sn.x, sn.y, 16 * s, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+      this.pills.forEach(p => {
+        this.suns.forEach(sn => {
+          const dx = sn.x - p.x, dy = sn.y - p.y, d = Math.hypot(dx, dy) || 1;
+          const f = sn.m / (d * d + 400) * 0.045;
+          p.vx += (dx / d) * f; p.vy += (dy / d) * f;
+        });
+        const spd = Math.hypot(p.vx, p.vy);
+        if (spd > 18) { p.vx = (p.vx / spd) * 18; p.vy = (p.vy / spd) * 18; }
+        p.x += p.vx; p.y += p.vy;
+        p.hue = (p.hue + 1.8) % 360;
+        p.trail.push({ x: p.x, y: p.y, h: p.hue });
+        if (p.trail.length > 5) p.trail.shift();
+        const pw = (width < 600 ? 50 : 74) * s;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        for (let t = 0; t < p.trail.length - 1; t++) {
+          const tr = p.trail[t];
+          drawSprite(ctx, p.si, true, tr.h, tr.x, tr.y, pw * 0.8, ph * 0.8, 0, (t / p.trail.length) * 0.3, 'lighter');
+        }
+        drawSprite(ctx, p.si, p.isRainbow, p.hue, p.x, p.y, pw, ph, Math.atan2(p.vy, p.vx), 0.95, 'lighter');
+      });
+    }
+  });
+
+  modes.push({
+    neurons: [], signals: [],
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 8 : 14;
+      this.neurons = Array.from({ length: count }, (_, i) => ({
+        x: cx + (Math.random() - 0.5) * width * 0.75,
+        y: cy + (Math.random() - 0.5) * height * 0.75,
+        si: i % 2,
+        isRainbow: true,
+        hue: (i * 30) % 360,
+        pulse: 0
+      }));
+      this.signals = [];
+    },
+    onClick() {
+      this.neurons.forEach(n => { n.pulse = 1; });
+    },
+    render(time) {
+      ctx.fillStyle = '#03040a'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      ctx.save();
+      for (let i = 0; i < this.neurons.length; i++) {
+        for (let j = i + 1; j < this.neurons.length; j++) {
+          const n1 = this.neurons[i], n2 = this.neurons[j];
+          const d = Math.hypot(n2.x - n1.x, n2.y - n1.y);
+          if (d < 260 * s) {
+            ctx.strokeStyle = `hsla(${(time * 0.05 + i * 25) % 360}, 85%, 60%, 0.35)`;
+            ctx.lineWidth = 1.5 * s;
+            ctx.beginPath(); ctx.moveTo(n1.x, n1.y); ctx.lineTo(n2.x, n2.y); ctx.stroke();
+            if (Math.random() < 0.02) {
+              this.signals.push({ from: n1, to: n2, t: 0, speed: 0.03, hue: n1.hue });
+            }
+          }
+        }
+      }
+      for (let i = this.signals.length - 1; i >= 0; i--) {
+        const sig = this.signals[i];
+        sig.t += sig.speed;
+        if (sig.t >= 1) {
+          sig.to.pulse = 1;
+          this.signals.splice(i, 1);
+          continue;
+        }
+        const sx = sig.from.x + (sig.to.x - sig.from.x) * sig.t;
+        const sy = sig.from.y + (sig.to.y - sig.from.y) * sig.t;
+        ctx.fillStyle = `hsla(${sig.hue}, 100%, 75%, 0.9)`;
+        ctx.beginPath(); ctx.arc(sx, sy, 4 * s, 0, Math.PI * 2); ctx.fill();
+      }
+      this.neurons.forEach(n => {
+        n.pulse *= 0.92;
+        n.hue = (n.hue + 1.2) % 360;
+        const pw = (width < 600 ? 54 : 78) * s * (1 + n.pulse * 0.3);
+        const ph = pw * (sprites[n.si].height / sprites[n.si].width);
+        drawSprite(ctx, n.si, n.isRainbow, n.hue, n.x, n.y, pw, ph, 0, 0.95, 'lighter');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    pills: [],
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 6 : 10;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        x: (i / count) * width,
+        y: height * 0.3 + (i % 3) * 60 * s,
+        vx: 1 + Math.random() * 1.5,
+        si: i % 2,
+        isRainbow: true,
+        hue: (i * 40) % 360
+      }));
+    },
+    onClick() {
+      this.pills.forEach(p => { p.vx *= 1.8; });
+    },
+    render(time) {
+      ctx.fillStyle = '#020608'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      ctx.save();
+      for (let layer = 0; layer < 4; layer++) {
+        const lHue = (time * 0.04 + layer * 70) % 360;
+        const grad = ctx.createLinearGradient(0, height * 0.1, 0, height * 0.7);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(0.5, `hsla(${lHue}, 90%, 65%, 0.3)`);
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(0, height * 0.1);
+        for (let x = 0; x <= width; x += 20) {
+          const y = height * (0.25 + layer * 0.1) + Math.sin(x * 0.005 + time * 0.0015 + layer) * 45 * s;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(width, height * 0.8); ctx.lineTo(0, height * 0.8);
+        ctx.closePath(); ctx.fill();
+      }
+      this.pills.forEach(p => {
+        p.x = (p.x + p.vx) % (width + 100);
+        p.vx += (1.5 - p.vx) * 0.02;
+        p.hue = (p.hue + 1.5) % 360;
+        const py = height * 0.35 + Math.sin(p.x * 0.006 + time * 0.002) * 50 * s;
+        const pw = (width < 600 ? 56 : 82) * s;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        drawSprite(ctx, p.si, p.isRainbow, p.hue, p.x - 50, py, pw, ph, Math.sin(p.x * 0.01) * 0.2, 0.95, 'lighter');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    pills: [],
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 7 : 11;
+      const spacing = (width < 600 ? 46 : 68) * s;
+      const startX = cx - (count * spacing) / 2;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        x: startX + i * spacing,
+        y: cy,
+        vx: i === 0 ? -12 : 0,
+        si: i % 2,
+        isRainbow: true,
+        hue: (i * 32) % 360
+      }));
+    },
+    onClick() {
+      this.pills[0].vx = -16;
+    },
+    render(time) {
+      ctx.fillStyle = '#060408'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      const radius = (width < 600 ? 22 : 32) * s;
+      for (let i = 0; i < this.pills.length - 1; i++) {
+        const p1 = this.pills[i], p2 = this.pills[i + 1];
+        const d = p2.x - p1.x;
+        if (d < radius * 2) {
+          const vTemp = p1.vx; p1.vx = p2.vx; p2.vx = vTemp;
+          p2.x = p1.x + radius * 2;
+        }
+      }
+      this.pills.forEach((p, idx) => {
+        p.vx += ((cx - (this.pills.length * radius) + idx * radius * 2) - p.x) * 0.03;
+        p.vx *= 0.96;
+        p.x += p.vx;
+        p.hue = (p.hue + 1.2) % 360;
+        const pw = (width < 600 ? 54 : 78) * s;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        drawSprite(ctx, p.si, p.isRainbow, p.hue, p.x, p.y + Math.abs(p.vx) * -1.5, pw, ph, p.vx * 0.04, 0.95, 'lighter');
+      });
+    }
+  });
+
+  modes.push({
+    pills: [], rot: 0,
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 5 : 8;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        z: (i / count) * 500,
+        si: i % 2,
+        isRainbow: true,
+        hue: (i * 45) % 360
+      }));
+      this.rot = 0;
+    },
+    onClick() { this.rot += Math.PI / 3; },
+    render(time) {
+      ctx.fillStyle = '#030206'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      this.rot += 0.008;
+      const sectors = 6;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(this.rot);
+      for (let sec = 0; sec < sectors; sec++) {
+        ctx.save();
+        ctx.rotate((sec / sectors) * Math.PI * 2);
+        this.pills.forEach(p => {
+          p.z = (p.z + 2) % 500;
+          const scale = (p.z / 500);
+          const px = scale * width * 0.35;
+          const py = Math.sin(time * 0.002 + p.z * 0.02) * 40 * s * scale;
+          const pw = (width < 600 ? 46 : 68) * s * scale;
+          const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+          drawSprite(ctx, p.si, p.isRainbow, p.hue + time * 0.05, px, py, pw, ph, p.z * 0.02, scale, 'lighter');
+        });
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    particles: [], morphT: 0, targetShape: 0,
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 24 : 40;
+      this.particles = Array.from({ length: count }, (_, i) => ({
+        x: 0, y: 0, z: 0, tx: 0, ty: 0, tz: 0,
+        si: i % 2,
+        isRainbow: true,
+        hue: (i * 12) % 360
+      }));
+      this.setShape(0);
+    },
+    setShape(idx) {
+      const count = this.particles.length;
+      this.particles.forEach((p, i) => {
+        const u = (i / count) * Math.PI * 2;
+        if (idx === 0) {
+          p.tx = Math.cos(u) * 160; p.ty = Math.sin(u) * 160; p.tz = Math.sin(u * 2) * 60;
+        } else if (idx === 1) {
+          const v = (i % 8) / 8 * Math.PI * 2;
+          p.tx = (140 + 50 * Math.cos(v)) * Math.cos(u);
+          p.ty = (140 + 50 * Math.cos(v)) * Math.sin(u);
+          p.tz = 50 * Math.sin(v);
+        } else {
+          p.tx = 16 * Math.pow(Math.sin(u), 3) * 10;
+          p.ty = -(13 * Math.cos(u) - 5 * Math.cos(2 * u) - 2 * Math.cos(3 * u) - Math.cos(4 * u)) * 10;
+          p.tz = Math.sin(u * 3) * 40;
+        }
+      });
+    },
+    onClick() {
+      this.targetShape = (this.targetShape + 1) % 3;
+      this.setShape(this.targetShape);
+    },
+    render(time) {
+      ctx.fillStyle = '#04030a'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      const rot = time * 0.001;
+      ctx.save();
+      this.particles.forEach(p => {
+        p.x += (p.tx - p.x) * 0.08;
+        p.y += (p.ty - p.y) * 0.08;
+        p.z += (p.tz - p.z) * 0.08;
+        const x1 = p.x * Math.cos(rot) - p.z * Math.sin(rot);
+        const z1 = p.x * Math.sin(rot) + p.z * Math.cos(rot);
+        const fov = 350;
+        const scale = fov / (fov + z1);
+        const px = cx + x1 * s * scale;
+        const py = cy + p.y * s * scale;
+        const pw = (width < 600 ? 48 : 70) * s * scale;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        drawSprite(ctx, p.si, p.isRainbow, p.hue + time * 0.04, px, py, pw, ph, rot, 0.95, 'lighter');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    meteors: [],
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 8 : 15;
+      this.meteors = Array.from({ length: count }, (_, i) => ({
+        x: Math.random() * width * 1.5,
+        y: Math.random() * -height,
+        spd: 12 + Math.random() * 10,
+        si: i % 2,
+        isRainbow: true,
+        hue: (i * 24) % 360,
+        trail: []
+      }));
+    },
+    onClick() {
+      this.meteors.forEach(m => { m.spd *= 2; });
+    },
+    render(time) {
+      ctx.fillStyle = 'rgba(2, 2, 6, 0.25)'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      const ang = Math.PI * 0.7;
+      const cosA = Math.cos(ang), sinA = Math.sin(ang);
+      ctx.save();
+      this.meteors.forEach(m => {
+        m.x += cosA * m.spd;
+        m.y += sinA * m.spd;
+        m.hue = (m.hue + 2) % 360;
+        if (m.x < -100 || m.y > height + 100) {
+          m.x = width * 0.5 + Math.random() * width;
+          m.y = -80 - Math.random() * 200;
+          m.spd = 12 + Math.random() * 10;
+          m.trail = [];
+        }
+        m.trail.push({ x: m.x, y: m.y, h: m.hue });
+        if (m.trail.length > 8) m.trail.shift();
+        const pw = (width < 600 ? 54 : 78) * s;
+        const ph = pw * (sprites[m.si].height / sprites[m.si].width);
+        for (let t = 0; t < m.trail.length - 1; t++) {
+          const tr = m.trail[t];
+          drawSprite(ctx, m.si, true, tr.h, tr.x, tr.y, pw * 0.7, ph * 0.7, ang, (t / m.trail.length) * 0.35, 'lighter');
+        }
+        drawSprite(ctx, m.si, m.isRainbow, m.hue, m.x, m.y, pw, ph, ang, 0.95, 'lighter');
+      });
+      ctx.restore();
     }
   });
 
