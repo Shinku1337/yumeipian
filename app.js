@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const TOTAL_MODES = 50;
+  const TOTAL_MODES = 60;
   const STORAGE_KEY = 'yump_style_idx';
   const HUE_STEPS = 18;
 
@@ -3341,6 +3341,538 @@
           drawSprite(ctx, m.si, true, tr.h, tr.x, tr.y, pw * 0.7, ph * 0.7, ang, (t / m.trail.length) * 0.35, 'lighter');
         }
         drawSprite(ctx, m.si, m.isRainbow, m.hue, m.x, m.y, pw, ph, ang, 0.95, 'lighter');
+      });
+      ctx.restore();
+    }
+  });
+
+
+  modes.push({
+    pills: [], trailBuffer: [], pulse: 0,
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 6 : 10;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        ang: (i / count) * Math.PI * 2,
+        dist: (80 + i * 25) * s,
+        spd: 0.015 * (i % 2 === 0 ? 1 : -1),
+        si: i % 2,
+        isRainbow: true,
+        hue: (i * 36) % 360,
+        echoes: []
+      }));
+      this.pulse = 0;
+    },
+    onClick() { this.pulse = 1; },
+    render(time) {
+      ctx.fillStyle = 'rgba(2, 1, 6, 0.16)'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      this.pulse *= 0.93;
+      const zoom = 1 + Math.sin(time * 0.002) * 0.05 + this.pulse * 0.15;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(zoom, zoom);
+      ctx.rotate(time * 0.0005);
+      for (let ring = 1; ring <= 4; ring++) {
+        const rad = (70 + ring * 60) * s;
+        ctx.strokeStyle = `hsla(${(time * 0.08 + ring * 50) % 360}, 100%, 65%, 0.25)`;
+        ctx.lineWidth = 2 * s;
+        ctx.beginPath();
+        ctx.arc(0, 0, rad, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      this.pills.forEach(p => {
+        p.ang += p.spd;
+        p.hue = (p.hue + 1.8) % 360;
+        const r = p.dist * (1 + Math.sin(time * 0.003 + p.ang) * 0.25);
+        const px = Math.cos(p.ang) * r;
+        const py = Math.sin(p.ang) * r;
+        p.echoes.push({ x: px, y: py, hue: p.hue, ang: p.ang });
+        if (p.echoes.length > 9) p.echoes.shift();
+        const pw = (width < 600 ? 56 : 82) * s;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        for (let e = 0; e < p.echoes.length - 1; e++) {
+          const ec = p.echoes[e];
+          const alpha = (e / p.echoes.length) * 0.35;
+          drawSprite(ctx, p.si, true, ec.hue, ec.x, ec.y, pw * (0.6 + e * 0.04), ph * (0.6 + e * 0.04), ec.ang, alpha, 'lighter');
+        }
+        drawSprite(ctx, p.si, p.isRainbow, p.hue, px, py, pw, ph, p.ang + Math.PI / 2, 0.95, 'lighter');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    pills: [], dispersion: 0,
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 5 : 8;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        x: cx + (Math.random() - 0.5) * width * 0.6,
+        y: cy + (Math.random() - 0.5) * height * 0.6,
+        vx: (Math.random() - 0.5) * 3,
+        vy: (Math.random() - 0.5) * 3,
+        rot: Math.random() * Math.PI * 2,
+        rotV: (Math.random() - 0.5) * 0.04,
+        si: i % 2,
+        hue: (i * 45) % 360
+      }));
+      this.dispersion = 0;
+    },
+    onClick() { this.dispersion = 24; },
+    render(time) {
+      ctx.fillStyle = '#010206'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      this.dispersion *= 0.92;
+      const baseSplit = (10 + Math.sin(time * 0.004) * 6 + this.dispersion) * s;
+      ctx.save();
+      this.pills.forEach(p => {
+        p.x += p.vx; p.y += p.vy; p.rot += p.rotV;
+        if (p.x < 50) { p.x = 50; p.vx *= -1; } if (p.x > width - 50) { p.x = width - 50; p.vx *= -1; }
+        if (p.y < 50) { p.y = 50; p.vy *= -1; } if (p.y > height - 50) { p.y = height - 50; p.vy *= -1; }
+        const pw = (width < 600 ? 64 : 96) * s;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        drawSprite(ctx, p.si, true, 0, p.x - baseSplit, p.y, pw, ph, p.rot, 0.75, 'screen');
+        drawSprite(ctx, p.si, true, 120, p.x, p.y - baseSplit * 0.5, pw, ph, p.rot, 0.75, 'screen');
+        drawSprite(ctx, p.si, true, 240, p.x + baseSplit, p.y + baseSplit * 0.5, pw, ph, p.rot, 0.75, 'screen');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    pills: [], dripParticles: [],
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 6 : 10;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        x: cx + (Math.random() - 0.5) * width * 0.7,
+        y: (i / count) * height * 0.8 + 60,
+        spd: 0.8 + Math.random() * 1.2,
+        si: i % 2,
+        isRainbow: true,
+        hue: (i * 36) % 360
+      }));
+      this.dripParticles = [];
+    },
+    onClick(x, y) {
+      const s = getScale();
+      for (let i = 0; i < 20; i++) {
+        this.dripParticles.push({
+          x: x + (Math.random() - 0.5) * 40 * s,
+          y: y,
+          vy: 2 + Math.random() * 6,
+          vx: (Math.random() - 0.5) * 2,
+          size: (3 + Math.random() * 5) * s,
+          alpha: 1,
+          hue: Math.random() * 360
+        });
+      }
+    },
+    render(time) {
+      ctx.fillStyle = 'rgba(4, 2, 8, 0.22)'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      ctx.save();
+      for (let i = this.dripParticles.length - 1; i >= 0; i--) {
+        const dp = this.dripParticles[i];
+        dp.y += dp.vy; dp.x += dp.vx; dp.alpha -= 0.02;
+        if (dp.alpha <= 0 || dp.y > height) {
+          this.dripParticles.splice(i, 1);
+          continue;
+        }
+        ctx.fillStyle = `hsla(${dp.hue}, 100%, 65%, ${dp.alpha})`;
+        ctx.beginPath();
+        ctx.arc(dp.x, dp.y, dp.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      this.pills.forEach(p => {
+        p.y -= p.spd;
+        if (p.y < -60) p.y = height + 60;
+        p.hue = (p.hue + 1.5) % 360;
+        const waveX = p.x + Math.sin(p.y * 0.015 + time * 0.003) * 35 * s;
+        if (Math.random() < 0.2) {
+          this.dripParticles.push({
+            x: waveX, y: p.y + 20 * s,
+            vy: 2 + Math.random() * 4, vx: (Math.random() - 0.5) * 1.5,
+            size: (2.5 + Math.random() * 3.5) * s, alpha: 0.9, hue: p.hue
+          });
+        }
+        const pw = (width < 600 ? 58 : 84) * s;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width) * (1 + Math.sin(time * 0.004 + p.x) * 0.2);
+        drawSprite(ctx, p.si, p.isRainbow, p.hue, waveX, p.y, pw, ph, Math.sin(time * 0.002) * 0.15, 0.92, 'lighter');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    tunnelStep: 0, invertFlash: 0, pills: [],
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 6 : 10;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        z: (i / count) * 600,
+        ang: (i / count) * Math.PI * 2,
+        si: i % 2,
+        hue: (i * 40) % 360
+      }));
+      this.tunnelStep = 0;
+      this.invertFlash = 0;
+    },
+    onClick() { this.invertFlash = 1; },
+    render(time) {
+      this.tunnelStep += 4;
+      this.invertFlash *= 0.88;
+      const isNegative = Math.sin(time * 0.006) > 0.85 || this.invertFlash > 0.3;
+      ctx.fillStyle = isNegative ? '#f5f5fa' : '#040306';
+      ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      const maxR = Math.hypot(width, height) * 0.6;
+      ctx.save();
+      for (let r = (this.tunnelStep % 50); r < maxR; r += 50) {
+        ctx.strokeStyle = isNegative ? '#000000' : `hsla(${(time * 0.1 + r) % 360}, 90%, 65%, 0.5)`;
+        ctx.lineWidth = (3 + (r / maxR) * 6) * s;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      this.pills.forEach(p => {
+        p.z = (p.z + 4) % 600;
+        p.ang += 0.015;
+        p.hue = (p.hue + 2) % 360;
+        const scale = p.z / 600;
+        const rad = scale * maxR * 0.65;
+        const px = cx + Math.cos(p.ang) * rad;
+        const py = cy + Math.sin(p.ang) * rad;
+        const pw = (width < 600 ? 54 : 80) * s * scale;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        drawSprite(ctx, p.si, true, p.hue, px, py, pw, ph, p.ang + Math.PI / 2, scale, isNegative ? 'difference' : 'lighter');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    frozenFrames: [], pills: [], lastSnap: 0,
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 5 : 8;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        x: cx + (Math.random() - 0.5) * width * 0.6,
+        y: cy + (Math.random() - 0.5) * height * 0.6,
+        vx: (Math.random() - 0.5) * 5,
+        vy: (Math.random() - 0.5) * 5,
+        rot: Math.random() * Math.PI * 2,
+        rotV: (Math.random() - 0.5) * 0.05,
+        si: i % 2,
+        hue: (i * 45) % 360
+      }));
+      this.frozenFrames = [];
+      this.lastSnap = 0;
+    },
+    onClick() {
+      this.pills.forEach(p => {
+        p.vx = (Math.random() - 0.5) * 12;
+        p.vy = (Math.random() - 0.5) * 12;
+      });
+    },
+    render(time) {
+      ctx.fillStyle = 'rgba(3, 2, 7, 0.12)'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      if (time - this.lastSnap > 120) {
+        this.lastSnap = time;
+        this.pills.forEach(p => {
+          this.frozenFrames.push({
+            x: p.x, y: p.y, rot: p.rot, si: p.si, hue: p.hue, alpha: 0.8
+          });
+        });
+      }
+      ctx.save();
+      for (let i = this.frozenFrames.length - 1; i >= 0; i--) {
+        const f = this.frozenFrames[i];
+        f.alpha -= 0.025;
+        if (f.alpha <= 0) {
+          this.frozenFrames.splice(i, 1);
+          continue;
+        }
+        const pw = (width < 600 ? 56 : 82) * s;
+        const ph = pw * (sprites[f.si].height / sprites[f.si].width);
+        drawSprite(ctx, f.si, true, f.hue, f.x, f.y, pw, ph, f.rot, f.alpha * 0.45, 'lighter');
+      }
+      this.pills.forEach(p => {
+        p.x += p.vx; p.y += p.vy; p.rot += p.rotV;
+        p.hue = (p.hue + 1.8) % 360;
+        if (p.x < 50) { p.x = 50; p.vx *= -1; } if (p.x > width - 50) { p.x = width - 50; p.vx *= -1; }
+        if (p.y < 50) { p.y = 50; p.vy *= -1; } if (p.y > height - 50) { p.y = height - 50; p.vy *= -1; }
+        const pw = (width < 600 ? 60 : 88) * s;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        drawSprite(ctx, p.si, true, p.hue, p.x, p.y, pw, ph, p.rot, 0.95, 'lighter');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    pills: [], lensStrength: 1,
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 7 : 12;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        x: cx + (Math.random() - 0.5) * width * 0.75,
+        y: cy + (Math.random() - 0.5) * height * 0.75,
+        vx: (Math.random() - 0.5) * 3,
+        vy: (Math.random() - 0.5) * 3,
+        si: i % 2,
+        hue: (i * 35) % 360
+      }));
+      this.lensStrength = 1;
+    },
+    onClick() { this.lensStrength = 3; },
+    render(time) {
+      ctx.fillStyle = '#020308'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      this.lensStrength += (1 - this.lensStrength) * 0.05;
+      const lensR = (140 + Math.sin(time * 0.003) * 30) * s;
+      ctx.save();
+      const lGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, lensR * 1.5);
+      lGrad.addColorStop(0, '#000000');
+      lGrad.addColorStop(0.5, `hsla(${(time * 0.08) % 360}, 90%, 65%, 0.3)`);
+      lGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = lGrad;
+      ctx.beginPath(); ctx.arc(cx, cy, lensR * 1.5, 0, Math.PI * 2); ctx.fill();
+      this.pills.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        p.hue = (p.hue + 1.4) % 360;
+        if (p.x < 40) { p.x = 40; p.vx *= -1; } if (p.x > width - 40) { p.x = width - 40; p.vx *= -1; }
+        if (p.y < 40) { p.y = 40; p.vy *= -1; } if (p.y > height - 40) { p.y = height - 40; p.vy *= -1; }
+        const dx = p.x - cx, dy = p.y - cy;
+        const d = Math.hypot(dx, dy) || 1;
+        let px = p.x, py = p.y, pScale = 1;
+        if (d < lensR * 2.2) {
+          const factor = Math.pow(d / (lensR * 2.2), 0.5) * this.lensStrength;
+          px = cx + (dx / d) * (d * factor);
+          py = cy + (dy / d) * (d * factor);
+          pScale = Math.max(0.4, factor);
+        }
+        const pw = (width < 600 ? 56 : 82) * s * pScale;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        drawSprite(ctx, p.si, true, p.hue, px, py, pw, ph, Math.atan2(dy, dx), 0.92, 'lighter');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    pills: [], glitchStrips: [],
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 6 : 10;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        x: cx + (Math.random() - 0.5) * width * 0.7,
+        y: cy + (Math.random() - 0.5) * height * 0.7,
+        vx: (Math.random() - 0.5) * 4,
+        vy: (Math.random() - 0.5) * 4,
+        si: i % 2,
+        hue: (i * 36) % 360
+      }));
+      this.glitchStrips = [];
+    },
+    onClick() {
+      for (let i = 0; i < 8; i++) {
+        this.glitchStrips.push({
+          y: Math.random() * height,
+          h: 15 + Math.random() * 45,
+          shift: (Math.random() - 0.5) * 80,
+          life: 8
+        });
+      }
+    },
+    render(time) {
+      ctx.fillStyle = '#050209'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      if (Math.random() < 0.18) {
+        this.glitchStrips.push({
+          y: Math.random() * height,
+          h: 8 + Math.random() * 30,
+          shift: (Math.random() - 0.5) * 50,
+          life: 4
+        });
+      }
+      ctx.save();
+      for (let i = this.glitchStrips.length - 1; i >= 0; i--) {
+        const gs = this.glitchStrips[i];
+        ctx.fillStyle = `hsla(${(time * 0.2 + gs.y) % 360}, 100%, 65%, 0.15)`;
+        ctx.fillRect(0, gs.y, width, gs.h);
+        gs.life--;
+        if (gs.life <= 0) this.glitchStrips.splice(i, 1);
+      }
+      this.pills.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        p.hue = (p.hue + 2) % 360;
+        if (p.x < 40) { p.x = 40; p.vx *= -1; } if (p.x > width - 40) { p.x = width - 40; p.vx *= -1; }
+        if (p.y < 40) { p.y = 40; p.vy *= -1; } if (p.y > height - 40) { p.y = height - 40; p.vy *= -1; }
+        let drawX = p.x;
+        this.glitchStrips.forEach(gs => {
+          if (p.y >= gs.y && p.y <= gs.y + gs.h) drawX += gs.shift;
+        });
+        const pw = (width < 600 ? 58 : 84) * s;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        drawSprite(ctx, p.si, true, p.hue, drawX, p.y, pw, ph, Math.sin(time * 0.01) * 0.4, 0.95, 'lighter');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    pills: [], breathPhase: 0,
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 8 : 14;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        ang: (i / count) * Math.PI * 2,
+        baseR: (100 + (i % 3) * 60) * s,
+        si: i % 2,
+        hue: (i * 30) % 360
+      }));
+      this.breathPhase = 0;
+    },
+    onClick() { this.breathPhase += Math.PI; },
+    render(time) {
+      ctx.fillStyle = '#030108'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      this.breathPhase += 0.02;
+      const breathScale = 1 + Math.sin(this.breathPhase) * 0.35;
+      ctx.save();
+      ctx.translate(cx, cy);
+      for (let w = 1; w <= 5; w++) {
+        const wr = w * 70 * s * breathScale;
+        ctx.strokeStyle = `hsla(${(time * 0.06 + w * 40) % 360}, 95%, 65%, 0.35)`;
+        ctx.lineWidth = 2 * s;
+        ctx.beginPath();
+        for (let a = 0; a <= Math.PI * 2; a += 0.1) {
+          const r = wr * (1 + Math.sin(a * 4 + this.breathPhase) * 0.12);
+          const x = Math.cos(a) * r, y = Math.sin(a) * r;
+          if (a === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.closePath(); ctx.stroke();
+      }
+      this.pills.forEach(p => {
+        p.ang += 0.008;
+        p.hue = (p.hue + 1.5) % 360;
+        const curR = p.baseR * breathScale;
+        const px = Math.cos(p.ang) * curR;
+        const py = Math.sin(p.ang) * curR;
+        const pw = (width < 600 ? 54 : 80) * s * breathScale;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        drawSprite(ctx, p.si, true, p.hue, px, py, pw, ph, p.ang + Math.PI / 2, 0.95, 'lighter');
+      });
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    pills: [], rot: 0,
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 4 : 6;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        dist: (110 + i * 38) * s,
+        spd: 0.012 * (i % 2 === 0 ? 1 : -1),
+        si: i % 2,
+        hue: (i * 60) % 360
+      }));
+      this.rot = 0;
+    },
+    onClick() { this.rot += Math.PI / 4; },
+    render(time) {
+      ctx.fillStyle = '#04020a'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      this.rot += 0.004;
+      const sectors = 12;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(this.rot);
+      for (let sec = 0; sec < sectors; sec++) {
+        ctx.save();
+        ctx.rotate((sec / sectors) * Math.PI * 2);
+        this.pills.forEach(p => {
+          p.hue = (p.hue + 0.5) % 360;
+          const px = p.dist;
+          const py = Math.sin(time * 0.003 + p.dist) * 25 * s;
+          const pw = (width < 600 ? 46 : 68) * s;
+          const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+          drawSprite(ctx, p.si, true, p.hue + sec * 30, px, py, pw, ph, py * 0.05, 0.88, 'lighter');
+        });
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+  });
+
+  modes.push({
+    phantoms: [], pills: [],
+    init() {
+      const s = getScale();
+      const count = width < 600 ? 6 : 9;
+      this.pills = Array.from({ length: count }, (_, i) => ({
+        x: cx + (Math.random() - 0.5) * width * 0.7,
+        y: height * 0.75 + (Math.random() - 0.5) * 80 * s,
+        vx: (Math.random() - 0.5) * 2,
+        si: i % 2,
+        hue: (i * 40) % 360
+      }));
+      this.phantoms = [];
+    },
+    onClick(x, y) {
+      const s = getScale();
+      for (let i = 0; i < 15; i++) {
+        this.phantoms.push({
+          x: x + (Math.random() - 0.5) * 50 * s,
+          y: y,
+          vy: -2 - Math.random() * 5,
+          vx: (Math.random() - 0.5) * 3,
+          rot: Math.random() * Math.PI * 2,
+          rotV: (Math.random() - 0.5) * 0.05,
+          si: Math.random() > 0.5 ? 1 : 0,
+          hue: Math.random() * 360,
+          alpha: 1
+        });
+      }
+    },
+    render(time) {
+      ctx.fillStyle = '#020106'; ctx.fillRect(0, 0, width, height);
+      const s = getScale();
+      if (Math.random() < 0.3) {
+        const src = this.pills[Math.floor(Math.random() * this.pills.length)];
+        if (src) {
+          this.phantoms.push({
+            x: src.x, y: src.y,
+            vy: -1.5 - Math.random() * 3.5,
+            vx: (Math.random() - 0.5) * 1.5,
+            rot: 0, rotV: (Math.random() - 0.5) * 0.03,
+            si: src.si, hue: src.hue, alpha: 0.85
+          });
+        }
+      }
+      ctx.save();
+      for (let i = this.phantoms.length - 1; i >= 0; i--) {
+        const ph = this.phantoms[i];
+        ph.y += ph.vy; ph.x += ph.vx; ph.rot += ph.rotV; ph.alpha -= 0.015;
+        if (ph.alpha <= 0 || ph.y < -80) {
+          this.phantoms.splice(i, 1);
+          continue;
+        }
+        const pw = (width < 600 ? 50 : 74) * s;
+        const pHeight = pw * (sprites[ph.si].height / sprites[ph.si].width);
+        drawSprite(ctx, ph.si, true, ph.hue, ph.x, ph.y, pw, pHeight, ph.rot, ph.alpha * 0.6, 'lighter');
+      }
+      this.pills.forEach(p => {
+        p.x += p.vx;
+        if (p.x < 50) { p.x = 50; p.vx *= -1; } if (p.x > width - 50) { p.x = width - 50; p.vx *= -1; }
+        p.hue = (p.hue + 1.2) % 360;
+        const pw = (width < 600 ? 58 : 84) * s;
+        const ph = pw * (sprites[p.si].height / sprites[p.si].width);
+        drawSprite(ctx, p.si, false, 0, p.x, p.y, pw, ph, Math.sin(time * 0.002 + p.x) * 0.1, 0.95, 'source-over');
       });
       ctx.restore();
     }
