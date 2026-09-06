@@ -25,6 +25,14 @@
   }
   updateBtnStyle();
 
+  const rhythmLink = document.getElementById('rhythm-link');
+  if (rhythmLink && window.location.hostname && !/^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)) {
+    const baseHost = window.location.hostname.replace(/^www\./, '');
+    if (baseHost.includes('.')) {
+      rhythmLink.href = window.location.protocol + '//game.' + baseHost + (window.location.port ? ':' + window.location.port : '') + '/';
+    }
+  }
+
   const warnModal = document.getElementById('warn-modal');
   const warnBtn = document.getElementById('warn-btn');
 
