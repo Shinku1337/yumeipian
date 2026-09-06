@@ -355,66 +355,111 @@
     const stepSec = (60 / song.bpm) / 4;
     const totalSteps = song.bars * 16;
 
+    function addNote(s, lane, hueShift = 0) {
+      map.push({
+        time: s * stepSec,
+        lane: lane,
+        spriteIdx: (map.length % 2),
+        hue: (s * 16 + hueShift) % 360,
+        judged: false,
+        judgement: null
+      });
+    }
+
     let alt = 0;
     for (let s = 8; s < totalSteps - 8; s++) {
       const beat = s % 4;
+      const sub = s % 2;
       const bar = Math.floor(s / 16);
-      let lane = -1;
+      const stepInBar = s % 16;
 
       if (song.id === 0) {
         if (beat === 0) {
-          lane = (alt % 2 === 0) ? 1 : 2;
+          const lane = (alt % 2 === 0) ? 1 : 2;
+          addNote(s, lane);
           alt++;
         } else if (beat === 2 && (s % 8 === 2) && bar % 2 === 1) {
-          lane = (alt % 2 === 0) ? 0 : 3;
+          const lane = (alt % 2 === 0) ? 0 : 3;
+          addNote(s, lane);
           alt++;
         }
       } else if (song.id === 1) {
-        if (beat === 0) {
-          lane = (alt % 4);
-          alt++;
-        } else if (beat === 2) {
-          lane = (3 - (alt % 4));
-          alt++;
-        } else if (beat === 1 && bar % 4 === 3) {
-          lane = (alt * 2) % 4;
+        const section = Math.floor(bar / 4) % 4;
+        const barInSec = bar % 4;
+
+        if (beat === 0 && sub === 0) {
+          if (stepInBar === 0 && (section === 1 || section === 2)) {
+            if (barInSec % 2 === 0) {
+              addNote(s, 0);
+              addNote(s, 3, 180);
+            } else {
+              addNote(s, 1);
+              addNote(s, 2, 180);
+            }
+          } else {
+            const flow = [
+              [0, 1, 2, 3],
+              [3, 2, 1, 0],
+              [0, 2, 1, 3],
+              [1, 3, 2, 0],
+              [0, 3, 1, 2],
+              [1, 2, 0, 3]
+            ][(bar + Math.floor(stepInBar / 4)) % 6];
+            addNote(s, flow[Math.floor(stepInBar / 4)]);
+          }
+        } else if (beat === 2 && sub === 0) {
+          const p = [1, 2, 3, 0][(bar * 2 + Math.floor(stepInBar / 4)) % 4];
+          addNote(s, p);
+        } else if (sub === 0 && (beat === 1 || beat === 3)) {
+          if (section === 1 || section === 2 || barInSec === 3) {
+            if (s % 8 === 2 || s % 8 === 6) {
+              addNote(s, (Math.floor(s / 2) % 4));
+            }
+          }
+        } else if (barInSec === 3 && stepInBar >= 12) {
+          addNote(s, stepInBar % 4);
         }
       } else {
-        if (beat === 0 || beat === 2) {
-          lane = (alt % 4);
-          alt++;
-        } else if (beat === 1 || beat === 3) {
-          if ((s % 8 === 1 || s % 8 === 7)) {
-            lane = (3 - (alt % 4));
-            alt++;
+        const section = Math.floor(bar / 4);
+        const barInSec = bar % 4;
+
+        if (sub === 0) {
+          const beatIdx = Math.floor(stepInBar / 2);
+          if (beatIdx % 2 === 0) {
+            if (beatIdx === 0 && (barInSec === 0 || barInSec === 2)) {
+              if (section % 2 === 0) {
+                addNote(s, 0);
+                addNote(s, 3, 180);
+              } else {
+                addNote(s, 1);
+                addNote(s, 2, 180);
+              }
+            } else {
+              const flow = [
+                [0, 1, 2, 3],
+                [3, 2, 1, 0],
+                [0, 2, 1, 3],
+                [3, 1, 2, 0],
+                [1, 0, 3, 2],
+                [2, 3, 0, 1]
+              ][(bar + Math.floor(beatIdx / 2)) % 6];
+              addNote(s, flow[Math.floor(beatIdx / 2)]);
+            }
+          } else {
+            if (section >= 1 || barInSec >= 2) {
+              const stair = (bar % 2 === 0)
+                ? (beatIdx % 4)
+                : (3 - (beatIdx % 4));
+              addNote(s, stair);
+            }
           }
-        }
-      }
-
-      if (lane !== -1) {
-        const time = s * stepSec;
-        map.push({
-          time: time,
-          lane: lane,
-          spriteIdx: (map.length % 2),
-          hue: (s * 16) % 360,
-          judged: false,
-          judgement: null
-        });
-
-        if (song.id >= 1 && beat === 0 && (bar % 4 === 0 || bar % 4 === 2) && s % 16 === 0) {
-          const secondLane = (lane + 2) % 4;
-          map.push({
-            time: time,
-            lane: secondLane,
-            spriteIdx: (map.length % 2),
-            hue: (s * 16 + 180) % 360,
-            judged: false,
-            judgement: null
-          });
+        } else if (barInSec === 3 && stepInBar >= 12) {
+          addNote(s, (stepInBar % 2 === 0) ? (stepInBar % 4) : (3 - (stepInBar % 4)));
         }
       }
     }
+
+    map.sort((a, b) => a.time - b.time);
     return map;
   }
 
