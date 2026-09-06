@@ -27,16 +27,13 @@
   const songCards = Array.from(document.querySelectorAll('.song-card'));
 
   const exitLinks = document.querySelectorAll('a[href="../"]');
-  if (exitLinks.length > 0 && window.location.hostname.includes('.')) {
-    const host = window.location.hostname;
-    if (host.endsWith('.pages.dev')) {
-      if (document.referrer && !document.referrer.includes(host)) {
-        exitLinks.forEach(link => { link.href = document.referrer; });
-      }
-    } else {
-      const parts = host.split('.');
-      if (parts.length > 2 && !/^\d+\.\d+\.\d+\.\d+$/.test(host)) {
-        const rootHost = parts.slice(1).join('.');
+  if (exitLinks.length > 0) {
+    if (document.referrer && !document.referrer.includes(window.location.host)) {
+      exitLinks.forEach(link => { link.href = document.referrer; });
+    } else if (window.location.hostname.includes('.')) {
+      const parts = window.location.hostname.split('.');
+      if (parts.length > 2 && !/^\d+\.\d+\.\d+\.\d+$/.test(window.location.hostname)) {
+        const rootHost = parts.slice(-2).join('.');
         const rootUrl = window.location.protocol + '//' + rootHost + (window.location.port ? ':' + window.location.port : '') + '/';
         exitLinks.forEach(link => { link.href = rootUrl; });
       }
