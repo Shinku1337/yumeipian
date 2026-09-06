@@ -5,11 +5,12 @@
   const STORAGE_KEY = 'yump_style_idx';
   const HUE_STEPS = 18;
 
-  let currentMode = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
-  if (isNaN(currentMode) || currentMode < 0 || currentMode >= TOTAL_MODES) {
-    currentMode = 0;
+  let lastMode = parseInt(localStorage.getItem(STORAGE_KEY) || '-1', 10);
+  let currentMode = Math.floor(Math.random() * TOTAL_MODES);
+  if (currentMode === lastMode && TOTAL_MODES > 1) {
+    currentMode = (currentMode + 1 + Math.floor(Math.random() * (TOTAL_MODES - 1))) % TOTAL_MODES;
   }
-  localStorage.setItem(STORAGE_KEY, ((currentMode + 1) % TOTAL_MODES).toString());
+  localStorage.setItem(STORAGE_KEY, currentMode.toString());
 
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d', { alpha: false });
@@ -180,7 +181,7 @@
   window.addEventListener('touchstart', (e) => {
     if (e.target.closest('#btn-wrap')) return;
     if (e.touches.length === 2) {
-      switchMode(currentMode + 1);
+      switchMode(getRandomNextMode());
       return;
     }
     const t = e.touches[0];
@@ -202,26 +203,34 @@
       const dy = t.clientY - touchStartY;
       const dt = performance.now() - touchStartTime;
       if (dt < 350 && Math.abs(dx) > 60 && Math.abs(dy) < 50) {
-        if (dx < -60) switchMode(currentMode + 1);
-        else if (dx > 60) switchMode(currentMode - 1);
+        if (dx < -60) switchMode(getRandomNextMode());
+        else if (dx > 60) switchMode(getRandomNextMode());
       }
     }
   }, { passive: true });
 
+  function getRandomNextMode() {
+    return (currentMode + 1 + Math.floor(Math.random() * (TOTAL_MODES - 1))) % TOTAL_MODES;
+  }
+
   function switchMode(idx) {
     currentMode = (idx + TOTAL_MODES) % TOTAL_MODES;
-    localStorage.setItem(STORAGE_KEY, ((currentMode + 1) % TOTAL_MODES).toString());
+    localStorage.setItem(STORAGE_KEY, currentMode.toString());
     updateBtnStyle();
     initCurrentMode();
   }
 
   btnWrap.addEventListener('click', (e) => {
     e.stopPropagation();
-    switchMode(currentMode + 1);
+    btn.style.transform = 'scale(0.8) rotate(' + ((Math.random() - 0.5) * 24) + 'deg)';
+    setTimeout(() => { btn.style.transform = ''; }, 160);
+    switchMode(getRandomNextMode());
   });
 
   window.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' || e.code === 'ArrowRight' || e.code === 'ArrowUp' || e.code === 'Enter' || e.code === 'PageDown') {
+    if (e.code === 'Space' || e.code === 'Enter') {
+      switchMode(getRandomNextMode());
+    } else if (e.code === 'ArrowRight' || e.code === 'ArrowUp' || e.code === 'PageDown') {
       switchMode(currentMode + 1);
     } else if (e.code === 'ArrowLeft' || e.code === 'ArrowDown' || e.code === 'PageUp') {
       switchMode(currentMode - 1);
