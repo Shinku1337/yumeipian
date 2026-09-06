@@ -90,6 +90,8 @@
   }
 
   let audioCtx = null;
+  const AUDIO_LATENCY_OFFSET = 0.034;
+
   function initAudio() {
     if (!audioCtx) {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -116,34 +118,37 @@
   function playHitSfx(type) {
     if (!audioCtx) return;
     const now = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
 
-    if (type === 'PERFECT') {
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(880, now);
-      osc.frequency.exponentialRampToValueAtTime(1760, now + 0.1);
-      gain.gain.setValueAtTime(0.28, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-      osc.start(now);
-      osc.stop(now + 0.12);
-    } else if (type === 'GREAT') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(660, now);
-      osc.frequency.exponentialRampToValueAtTime(1100, now + 0.09);
-      gain.gain.setValueAtTime(0.22, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-      osc.start(now);
-      osc.stop(now + 0.1);
-    } else if (type === 'GOOD') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(440, now);
-      gain.gain.setValueAtTime(0.18, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-      osc.start(now);
-      osc.stop(now + 0.08);
+    const clickOsc = audioCtx.createOscillator();
+    const clickGain = audioCtx.createGain();
+    clickOsc.type = 'triangle';
+    clickOsc.connect(clickGain);
+    clickGain.connect(audioCtx.destination);
+
+    const freqStart = type === 'PERFECT' ? 1760 : type === 'GREAT' ? 1320 : 880;
+    const freqEnd = type === 'PERFECT' ? 440 : type === 'GREAT' ? 330 : 220;
+    clickOsc.frequency.setValueAtTime(freqStart, now);
+    clickOsc.frequency.exponentialRampToValueAtTime(freqEnd, now + 0.04);
+    clickGain.gain.setValueAtTime(0.35, now);
+    clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+    clickOsc.start(now);
+    clickOsc.stop(now + 0.05);
+
+    const nBuf = getNoiseBuffer();
+    if (nBuf) {
+      const snap = audioCtx.createBufferSource();
+      snap.buffer = nBuf;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.setValueAtTime(type === 'PERFECT' ? 5000 : 3500, now);
+      const snapGain = audioCtx.createGain();
+      snapGain.gain.setValueAtTime(type === 'PERFECT' ? 0.25 : 0.15, now);
+      snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+      snap.connect(filter);
+      filter.connect(snapGain);
+      snapGain.connect(audioCtx.destination);
+      snap.start(now);
+      snap.stop(now + 0.025);
     }
   }
 
@@ -339,58 +344,71 @@
   let groove = 50;
   let particles = [];
   let judgements = [];
+  let shockRings = [];
   let lanePulses = [0, 0, 0, 0];
+  let laneBeams = [0, 0, 0, 0];
+  let screenShake = 0;
+  let comboScale = 1.0;
 
   function generateBeatmap(song) {
     const map = [];
     const stepSec = (60 / song.bpm) / 4;
     const totalSteps = song.bars * 16;
-    let seed = song.bpm * 37 + song.bars;
-    function rand() {
-      seed = (seed * 9301 + 49297) % 233280;
-      return seed / 233280;
-    }
 
-    let lastLane = -1;
+    let alt = 0;
     for (let s = 8; s < totalSteps - 8; s++) {
       const beat = s % 4;
-      let shouldSpawn = false;
-      let lane = Math.floor(rand() * 4);
+      const bar = Math.floor(s / 16);
+      let lane = -1;
 
       if (song.id === 0) {
-        if (beat === 0 && rand() > 0.15) shouldSpawn = true;
-        else if (beat === 2 && rand() > 0.55) shouldSpawn = true;
+        if (beat === 0) {
+          lane = (alt % 2 === 0) ? 1 : 2;
+          alt++;
+        } else if (beat === 2 && (s % 8 === 2) && bar % 2 === 1) {
+          lane = (alt % 2 === 0) ? 0 : 3;
+          alt++;
+        }
       } else if (song.id === 1) {
-        if (beat === 0) shouldSpawn = true;
-        else if (beat === 2 && rand() > 0.3) shouldSpawn = true;
-        else if (beat === 1 && rand() > 0.7) shouldSpawn = true;
+        if (beat === 0) {
+          lane = (alt % 4);
+          alt++;
+        } else if (beat === 2) {
+          lane = (3 - (alt % 4));
+          alt++;
+        } else if (beat === 1 && bar % 4 === 3) {
+          lane = (alt * 2) % 4;
+        }
       } else {
-        if (beat === 0 || beat === 2) shouldSpawn = true;
-        else if (rand() > 0.5) shouldSpawn = true;
+        if (beat === 0 || beat === 2) {
+          lane = (alt % 4);
+          alt++;
+        } else if (beat === 1 || beat === 3) {
+          if ((s % 8 === 1 || s % 8 === 7)) {
+            lane = (3 - (alt % 4));
+            alt++;
+          }
+        }
       }
 
-      if (shouldSpawn) {
-        if (lane === lastLane && rand() > 0.3) {
-          lane = (lane + 1 + Math.floor(rand() * 3)) % 4;
-        }
-        lastLane = lane;
+      if (lane !== -1) {
         const time = s * stepSec;
         map.push({
           time: time,
           lane: lane,
-          spriteIdx: rand() > 0.4 ? 0 : 1,
-          hue: (s * 15) % 360,
+          spriteIdx: (map.length % 2),
+          hue: (s * 16) % 360,
           judged: false,
           judgement: null
         });
 
-        if (song.id >= 1 && beat === 0 && rand() > 0.72) {
+        if (song.id >= 1 && beat === 0 && (bar % 4 === 0 || bar % 4 === 2) && s % 16 === 0) {
           const secondLane = (lane + 2) % 4;
           map.push({
             time: time,
             lane: secondLane,
-            spriteIdx: rand() > 0.5 ? 1 : 0,
-            hue: (s * 15 + 180) % 360,
+            spriteIdx: (map.length % 2),
+            hue: (s * 16 + 180) % 360,
             judged: false,
             judgement: null
           });
@@ -414,7 +432,11 @@
     groove = 50;
     particles = [];
     judgements = [];
+    shockRings = [];
     lanePulses = [0, 0, 0, 0];
+    laneBeams = [0, 0, 0, 0];
+    screenShake = 0;
+    comboScale = 1.0;
 
     updateHUD();
 
@@ -464,9 +486,8 @@
     isPlaying = false;
     if (synthTimer) cancelAnimationFrame(synthTimer);
 
-    const totalNotes = notes.length;
     const totalHits = stats.perfect + stats.great + stats.good + stats.miss;
-    const acc = totalHits > 0 ? ((stats.perfect * 100 + stats.great * 70 + stats.good * 30) / (totalHits * 100)) * 100 : 0;
+    const acc = totalHits > 0 ? ((stats.perfect * 100 + stats.great * 75 + stats.good * 40) / (totalHits * 100)) * 100 : 0;
 
     let rank = 'F';
     if (score >= 980000 || (stats.miss === 0 && acc >= 98)) rank = 'S+';
@@ -490,7 +511,7 @@
   function updateHUD() {
     hudScore.textContent = score.toString().padStart(7, '0');
     const totalHits = stats.perfect + stats.great + stats.good + stats.miss;
-    const acc = totalHits > 0 ? ((stats.perfect * 100 + stats.great * 70 + stats.good * 30) / (totalHits * 100)) * 100 : 100;
+    const acc = totalHits > 0 ? ((stats.perfect * 100 + stats.great * 75 + stats.good * 40) / (totalHits * 100)) * 100 : 100;
     hudAcc.textContent = acc.toFixed(1) + '%';
 
     grooveGauge.style.width = Math.max(0, Math.min(100, groove)) + '%';
@@ -503,38 +524,71 @@
     }
   }
 
-  function addHitEffect(lane, type) {
+  function addHitEffect(lane, type, timingOffset) {
     const laneW = trackW / 4;
     const x = trackLeft + lane * laneW + laneW / 2;
     const y = hitY;
 
-    const count = type === 'PERFECT' ? 24 : type === 'GREAT' ? 16 : 8;
-    const colors = type === 'PERFECT' ? ['#ffd700', '#ff007f', '#00f0ff'] : type === 'GREAT' ? ['#00f0ff', '#7000ff'] : ['#00ff66', '#ffffff'];
+    laneBeams[lane] = 1.0;
+    if (type === 'PERFECT') screenShake = 3.5;
+    else if (type === 'GREAT') screenShake = 1.8;
+
+    const count = type === 'PERFECT' ? 26 : type === 'GREAT' ? 18 : 10;
+    const colors = type === 'PERFECT' ? ['#ffd700', '#ff007f', '#00f0ff', '#ffffff'] : type === 'GREAT' ? ['#00f0ff', '#7000ff', '#ffffff'] : ['#00ff66', '#ffffff'];
 
     for (let i = 0; i < count; i++) {
       const ang = Math.random() * Math.PI * 2;
-      const spd = 2 + Math.random() * 7;
+      const spd = (type === 'PERFECT' ? 3 : 2) + Math.random() * 8;
       particles.push({
         x: x,
         y: y,
         vx: Math.cos(ang) * spd,
-        vy: Math.sin(ang) * spd - 1,
+        vy: Math.sin(ang) * spd - 1.5,
         color: colors[Math.floor(Math.random() * colors.length)],
-        size: 3 + Math.random() * 4,
+        size: (type === 'PERFECT' ? 3.5 : 2.5) + Math.random() * 4,
         alpha: 1,
-        decay: 0.02 + Math.random() * 0.03,
+        decay: 0.024 + Math.random() * 0.03,
         rot: Math.random() * Math.PI * 2,
-        rotV: (Math.random() - 0.5) * 0.2
+        rotV: (Math.random() - 0.5) * 0.25
       });
+    }
+
+    shockRings.push({
+      x: x,
+      y: y,
+      r: 8,
+      maxR: laneW * 0.75,
+      alpha: 1,
+      color: type === 'PERFECT' ? '#ffd700' : type === 'GREAT' ? '#00f0ff' : '#00ff66'
+    });
+
+    let subText = '';
+    let subColor = '#ffd700';
+    if (type === 'PERFECT') {
+      if (Math.abs(timingOffset) <= 0.022) {
+        subText = 'CRITICAL';
+        subColor = '#ffe600';
+      } else if (timingOffset > 0) {
+        subText = 'LATE';
+        subColor = '#ffb300';
+      } else {
+        subText = 'EARLY';
+        subColor = '#00f0ff';
+      }
+    } else if (type === 'GREAT') {
+      subText = timingOffset > 0 ? 'LATE' : 'EARLY';
+      subColor = timingOffset > 0 ? '#ff9900' : '#00f0ff';
     }
 
     judgements.push({
       text: type,
+      subText: subText,
+      subColor: subColor,
       x: x,
-      y: y - 28,
+      y: y - 32,
       alpha: 1,
-      scale: 1.4,
-      vy: -1.2,
+      scale: 1.5,
+      vy: -1.3,
       color: type === 'PERFECT' ? '#ffd700' : type === 'GREAT' ? '#00f0ff' : type === 'GOOD' ? '#00ff66' : '#ff3366'
     });
 
@@ -545,18 +599,21 @@
 
   function handleHit(lane) {
     if (!isPlaying || isPaused || !audioCtx) return;
-    const curSongTime = audioCtx.currentTime - songStartTime;
+    const curSongTime = (audioCtx.currentTime - songStartTime) - AUDIO_LATENCY_OFFSET;
     lanePulses[lane] = 1.0;
 
     let closestNote = null;
     let minDiff = Infinity;
+    let signedDiff = 0;
 
     for (let i = 0; i < notes.length; i++) {
       const n = notes[i];
       if (n.lane === lane && !n.judged) {
-        const diff = Math.abs(n.time - curSongTime);
-        if (diff < minDiff && diff < 0.20) {
-          minDiff = diff;
+        const rawDiff = curSongTime - n.time;
+        const absDiff = Math.abs(rawDiff);
+        if (absDiff < minDiff && absDiff < 0.22) {
+          minDiff = absDiff;
+          signedDiff = rawDiff;
           closestNote = n;
         }
       }
@@ -567,29 +624,30 @@
       let jType = 'GOOD';
       let pts = 300;
 
-      if (minDiff <= 0.05) {
+      if (minDiff <= 0.065) {
         jType = 'PERFECT';
         pts = 1000;
         stats.perfect++;
-        groove = Math.min(100, groove + 3.5);
-      } else if (minDiff <= 0.10) {
+        groove = Math.min(100, groove + 3.2);
+      } else if (minDiff <= 0.125) {
         jType = 'GREAT';
-        pts = 700;
+        pts = 750;
         stats.great++;
         groove = Math.min(100, groove + 2.0);
       } else {
         jType = 'GOOD';
-        pts = 300;
+        pts = 350;
         stats.good++;
         groove = Math.min(100, groove + 0.8);
       }
 
       combo++;
+      comboScale = 1.4;
       if (combo > maxCombo) maxCombo = combo;
-      score += pts + Math.min(combo * 15, 500);
+      score += pts + Math.min(combo * 20, 600);
 
       playHitSfx(jType);
-      addHitEffect(lane, jType);
+      addHitEffect(lane, jType, signedDiff);
       updateHUD();
     }
   }
@@ -610,7 +668,7 @@
     }
 
     const lane = keyMap[e.code];
-    if (lane !== undefined) {
+    if (lane !== undefined && !e.repeat) {
       e.preventDefault();
       touchLanes[lane].classList.add('pressed');
       handleHit(lane);
@@ -624,24 +682,69 @@
     }
   });
 
+  function getLaneFromCoord(clientX, clientY) {
+    if (clientY < height * 0.45) return -1;
+    const laneW = trackW / 4;
+    const rx = clientX - trackLeft;
+    if (rx < -20 || rx > trackW + 20) return -1;
+    const lane = Math.floor(rx / laneW);
+    return Math.max(0, Math.min(3, lane));
+  }
+
+  const activeTouches = new Map();
+
+  container.addEventListener('touchstart', (e) => {
+    if (e.target.closest('.modal-card') || e.target.closest('.hud-btn')) return;
+    e.preventDefault();
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const t = e.changedTouches[i];
+      const lane = getLaneFromCoord(t.clientX, t.clientY);
+      if (lane !== -1) {
+        activeTouches.set(t.identifier, lane);
+        touchLanes[lane].classList.add('pressed');
+        handleHit(lane);
+      }
+    }
+  }, { passive: false });
+
+  container.addEventListener('touchmove', (e) => {
+    if (e.target.closest('.modal-card') || e.target.closest('.hud-btn')) return;
+    e.preventDefault();
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const t = e.changedTouches[i];
+      const newLane = getLaneFromCoord(t.clientX, t.clientY);
+      const oldLane = activeTouches.get(t.identifier);
+      if (newLane !== -1 && newLane !== oldLane) {
+        if (oldLane !== undefined) touchLanes[oldLane].classList.remove('pressed');
+        activeTouches.set(t.identifier, newLane);
+        touchLanes[newLane].classList.add('pressed');
+        handleHit(newLane);
+      }
+    }
+  }, { passive: false });
+
+  function onTouchEndOrCancel(e) {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const t = e.changedTouches[i];
+      const oldLane = activeTouches.get(t.identifier);
+      if (oldLane !== undefined) {
+        touchLanes[oldLane].classList.remove('pressed');
+        activeTouches.delete(t.identifier);
+      }
+    }
+  }
+
+  container.addEventListener('touchend', onTouchEndOrCancel, { passive: false });
+  container.addEventListener('touchcancel', onTouchEndOrCancel, { passive: false });
+
   touchLanes.forEach((tl, laneIdx) => {
-    function onTouch(e) {
+    tl.addEventListener('mousedown', (e) => {
       e.preventDefault();
-      e.stopPropagation();
       tl.classList.add('pressed');
       handleHit(laneIdx);
-    }
-    function offTouch(e) {
-      e.preventDefault();
-      tl.classList.remove('pressed');
-    }
-
-    tl.addEventListener('touchstart', onTouch, { passive: false });
-    tl.addEventListener('touchend', offTouch, { passive: false });
-    tl.addEventListener('touchcancel', offTouch, { passive: false });
-    tl.addEventListener('mousedown', onTouch);
-    tl.addEventListener('mouseup', offTouch);
-    tl.addEventListener('mouseleave', offTouch);
+    });
+    tl.addEventListener('mouseup', () => { tl.classList.remove('pressed'); });
+    tl.addEventListener('mouseleave', () => { tl.classList.remove('pressed'); });
   });
 
   startBtn.addEventListener('click', startGame);
@@ -655,13 +758,20 @@
   function render(time) {
     ctx.clearRect(0, 0, width, height);
 
+    ctx.save();
+    if (screenShake > 0.1) {
+      const sx = (Math.random() - 0.5) * screenShake;
+      const sy = (Math.random() - 0.5) * screenShake * 1.5;
+      ctx.translate(sx, sy);
+      screenShake *= 0.84;
+    }
+
     ctx.fillStyle = '#06060c';
     ctx.fillRect(0, 0, width, height);
 
     const laneW = trackW / 4;
     const topY = height * 0.08;
 
-    ctx.save();
     const trackGrad = ctx.createLinearGradient(0, topY, 0, height);
     trackGrad.addColorStop(0, 'rgba(10, 10, 22, 0.4)');
     trackGrad.addColorStop(0.7, 'rgba(18, 14, 35, 0.7)');
@@ -686,6 +796,16 @@
         ctx.fillRect(lx, topY, laneW, height - topY);
         lanePulses[l] *= 0.88;
       }
+      if (laneBeams[l] > 0.01) {
+        const lx = trackLeft + l * laneW;
+        const beamGrad = ctx.createLinearGradient(0, hitY, 0, topY);
+        beamGrad.addColorStop(0, `rgba(0, 240, 255, ${laneBeams[l] * 0.45})`);
+        beamGrad.addColorStop(0.6, `rgba(255, 0, 128, ${laneBeams[l] * 0.25})`);
+        beamGrad.addColorStop(1, 'rgba(0, 240, 255, 0)');
+        ctx.fillStyle = beamGrad;
+        ctx.fillRect(lx, topY, laneW, hitY - topY);
+        laneBeams[l] *= 0.84;
+      }
     }
 
     ctx.strokeStyle = '#00f0ff';
@@ -708,11 +828,28 @@
       ctx.fill();
       ctx.stroke();
     }
-    ctx.restore();
+
+    for (let i = shockRings.length - 1; i >= 0; i--) {
+      const r = shockRings[i];
+      r.r += (r.maxR - r.r) * 0.18 + 2;
+      r.alpha -= 0.045;
+      if (r.alpha <= 0) {
+        shockRings.splice(i, 1);
+        continue;
+      }
+      ctx.save();
+      ctx.strokeStyle = r.color;
+      ctx.globalAlpha = r.alpha;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
 
     if (isPlaying && audioCtx) {
-      const curSongTime = audioCtx.currentTime - songStartTime;
-      const noteSpeed = (hitY - topY) / 1.1;
+      const curSongTime = (audioCtx.currentTime - songStartTime) - AUDIO_LATENCY_OFFSET;
+      const noteSpeed = (hitY - topY) / 1.05;
 
       const progress = Math.max(0, Math.min(100, (curSongTime / songDuration) * 100));
       progressBar.style.width = progress + '%';
@@ -724,14 +861,16 @@
         const timeDiff = n.time - curSongTime;
         const noteY = hitY - timeDiff * noteSpeed;
 
-        if (timeDiff < -0.16) {
+        if (timeDiff < -0.19) {
           n.judged = true;
           stats.miss++;
           combo = 0;
-          groove = Math.max(0, groove - 5);
+          groove = Math.max(0, groove - 6);
           updateHUD();
           judgements.push({
             text: 'MISS',
+            subText: '',
+            subColor: '',
             x: trackLeft + n.lane * laneW + laneW / 2,
             y: hitY - 20,
             alpha: 1,
@@ -746,16 +885,16 @@
 
         const noteX = trackLeft + n.lane * laneW + laneW / 2;
         const img = sprites[n.spriteIdx];
-        const nw = Math.min(laneW * 0.72, 76);
+        const nw = Math.min(laneW * 0.74, 80);
         const nh = img ? nw * (img.height / img.width) : nw * 0.5;
 
         ctx.save();
         ctx.translate(noteX, noteY);
 
         ctx.shadowColor = `hsl(${n.hue}, 100%, 65%)`;
-        ctx.shadowBlur = 16;
+        ctx.shadowBlur = 18;
 
-        ctx.fillStyle = `hsla(${n.hue}, 100%, 50%, 0.3)`;
+        ctx.fillStyle = `hsla(${n.hue}, 100%, 50%, 0.35)`;
         ctx.fillRect(-nw / 2 - 3, -nh / 2 - 3, nw + 6, nh + 6);
 
         if (img) {
@@ -765,8 +904,8 @@
           ctx.fillRect(-nw / 2, -nh / 2, nw, nh);
         }
 
-        ctx.strokeStyle = `hsl(${n.hue}, 100%, 75%)`;
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = `hsl(${n.hue}, 100%, 80%)`;
+        ctx.lineWidth = 2.5;
         ctx.strokeRect(-nw / 2, -nh / 2, nw, nh);
 
         ctx.restore();
@@ -797,36 +936,49 @@
     for (let i = judgements.length - 1; i >= 0; i--) {
       const j = judgements[i];
       j.y += j.vy;
-      j.alpha -= 0.024;
-      j.scale += (1.0 - j.scale) * 0.12;
+      j.alpha -= 0.022;
+      j.scale += (1.0 - j.scale) * 0.14;
       if (j.alpha <= 0) {
         judgements.splice(i, 1);
         continue;
       }
       ctx.save();
       ctx.globalAlpha = j.alpha;
-      ctx.font = `900 ${Math.floor(22 * j.scale)}px sans-serif`;
+      ctx.font = `900 ${Math.floor(24 * j.scale)}px sans-serif`;
       ctx.textAlign = 'center';
       ctx.fillStyle = j.color;
       ctx.shadowColor = j.color;
-      ctx.shadowBlur = 12;
+      ctx.shadowBlur = 14;
       ctx.fillText(j.text, j.x, j.y);
+
+      if (j.subText) {
+        ctx.font = `800 ${Math.floor(11 * j.scale)}px monospace, sans-serif`;
+        ctx.fillStyle = j.subColor;
+        ctx.shadowColor = j.subColor;
+        ctx.shadowBlur = 8;
+        ctx.fillText(j.subText, j.x, j.y + 16);
+      }
       ctx.restore();
     }
+
+    comboScale += (1.0 - comboScale) * 0.12;
 
     if (combo > 2) {
       ctx.save();
       ctx.textAlign = 'center';
       ctx.fillStyle = '#fff';
-      ctx.font = '900 36px monospace, sans-serif';
+      const cFontSize = Math.floor(38 * comboScale);
+      ctx.font = `900 ${cFontSize}px monospace, sans-serif`;
       ctx.shadowColor = '#00f0ff';
-      ctx.shadowBlur = 16;
-      ctx.fillText(combo.toString(), trackLeft + trackW / 2, hitY - 80);
+      ctx.shadowBlur = 18;
+      ctx.fillText(combo.toString(), trackLeft + trackW / 2, hitY - 85);
       ctx.font = '700 12px sans-serif';
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-      ctx.fillText('COMBO', trackLeft + trackW / 2, hitY - 60);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+      ctx.fillText('COMBO', trackLeft + trackW / 2, hitY - 65);
       ctx.restore();
     }
+
+    ctx.restore();
 
     requestAnimationFrame(render);
   }
